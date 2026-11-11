@@ -28,10 +28,7 @@ export function XntRewardsDrawer({ open, onOpenChange }: Props) {
 		<Drawer side="right" open={open} onOpenChange={onOpenChange}>
 			<DrawerContent className="w-[420px] max-w-full">
 				<div className="flex h-14 flex-none items-center gap-3 px-4">
-					<div className="min-w-0 flex-1">
-						<div className="text-sm font-medium">XNT rewards</div>
-						<div className="text-2xs text-fg-muted">Your trading fees buy XNT for you</div>
-					</div>
+					<div className="min-w-0 flex-1 text-sm font-medium">XNT rewards</div>
 					<DrawerClose
 						className="grid size-8 place-items-center rounded-8 text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg"
 						aria-label="Close"
