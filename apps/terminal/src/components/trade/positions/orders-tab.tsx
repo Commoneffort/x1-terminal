@@ -1,12 +1,14 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { useState } from "react";
-import { useConnection } from "wagmi";
+import { PencilIcon } from "@phosphor-icons/react";
+import { type ReactNode, useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { canAmendOrderPrice, canAmendRestingOrder } from "@/lib/trade/amend-order";
 import { getOrderValue, isClosePositionOrder, type OpenOrder } from "@/lib/trade/open-orders";
 import { orderHistoryDetails } from "@/lib/trade/order-history";
 import type { Side } from "@/lib/trade/types";
@@ -17,6 +19,7 @@ import { AssetBadge } from "../components/asset-badge";
 import { AccountFilterSelect } from "./account-filter-select";
 import { AccountTableToolbar } from "./account-table-toolbar";
 import { ConnectPlaceholder } from "./connect-placeholder";
+import { EditOrderModal } from "./edit-order-modal";
 import { LoadingRows } from "./loading-rows";
 import { Placeholder } from "./placeholder";
 import {
@@ -32,6 +35,7 @@ import {
 	accountTableClass,
 	accountTableShellClass,
 	accountTabRootClass,
+	accountTextLinkClass,
 	getAriaSort,
 } from "./positions-panel-table-styles";
 import { SortHeadButton } from "./sort-head-button";
@@ -39,7 +43,7 @@ import { SortHeadButton } from "./sort-head-button";
 type CancelScope = "row" | "selected" | "all";
 
 export function OrdersTab() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { setSide } = useOrderEntryActions();
@@ -58,6 +62,7 @@ export function OrdersTab() {
 		{ enabled: isConnected && !!address },
 	);
 	const markets = useMarkets();
+	const [editing, setEditing] = useState<{ oid: number; field: "amount" | "value" | "price" } | null>(null);
 	const [typeFilter, setTypeFilter] = useState("");
 	const [sideFilter, setSideFilter] = useState("");
 	const [marketFilter, setMarketFilter] = useState("");
@@ -71,6 +76,7 @@ export function OrdersTab() {
 	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 
 	const openOrders = openOrdersEvent?.orders ?? [];
+	const editingOrder = editing ? openOrders.find((order) => order.oid === editing.oid) : undefined;
 
 	const openIds = new Set(openOrders.map((order) => order.oid));
 	const validSelectedIds = new Set<number>();
@@ -347,6 +353,10 @@ export function OrdersTab() {
 									const cancelling = cancellingOids.has(order.oid);
 									const buy = order.side === "B";
 									const closeOrder = isClosePositionOrder(order);
+									const editable = canAmendRestingOrder(order) && !cancelling;
+									const priceEditable = canAmendOrderPrice(order) && !cancelling;
+									const size = formatToken(order.sz, decimals);
+									const price = formatPrice(order.limitPx, { szDecimals: decimals, style: "decimal", compact: false });
 									return (
 										<TableRow key={order.oid} className={accountRowClass}>
 											<TableCell className={accountCellClass}>
@@ -374,16 +384,43 @@ export function OrdersTab() {
 												{detail.direction}
 											</TableCell>
 											<TableCell className={numCellClass}>
-												{closeOrder ? "Close Position" : formatToken(order.sz, decimals)}
+												{editable ? (
+													<EditValueButton
+														label={`Edit amount for ${order.coin}`}
+														onClick={() => setEditing({ oid: order.oid, field: "amount" })}
+													>
+														{size}
+													</EditValueButton>
+												) : (
+													getSizeText(closeOrder, size)
+												)}
 											</TableCell>
 											<TableCell className={numCellClass}>
 												{closeOrder ? "--" : formatToken(order.origSz, decimals)}
 											</TableCell>
-											<TableCell className={numCellClass}>{getOrderValueText(detail, quote)}</TableCell>
 											<TableCell className={numCellClass}>
-												{detail.market
-													? "Market"
-													: formatPrice(order.limitPx, { szDecimals: decimals, style: "decimal", compact: false })}
+												{editable && detail.value ? (
+													<EditValueButton
+														label={`Edit value for ${order.coin}`}
+														onClick={() => setEditing({ oid: order.oid, field: "value" })}
+													>
+														{formatToken(detail.value, { decimals: 2, symbol: quote, compact: false })}
+													</EditValueButton>
+												) : (
+													getOrderValueText(detail, quote)
+												)}
+											</TableCell>
+											<TableCell className={numCellClass}>
+												{priceEditable ? (
+													<EditValueButton
+														label={`Edit price for ${order.coin}`}
+														onClick={() => setEditing({ oid: order.oid, field: "price" })}
+													>
+														{price}
+													</EditValueButton>
+												) : (
+													getPriceText(detail.market, price)
+												)}
 											</TableCell>
 											<TableCell className={accountCellClass}>{getReduceOnlyText(spot, order.reduceOnly)}</TableCell>
 											<TableCell className={accountCellClass}>{detail.trigger}</TableCell>
@@ -422,7 +459,24 @@ export function OrdersTab() {
 					</span>
 				</div>
 			)}
+			{editing && editingOrder && (
+				<EditOrderModal
+					key={`${address}:${editing.oid}`}
+					order={editingOrder}
+					field={editing.field}
+					onClose={() => setEditing(null)}
+				/>
+			)}
 		</div>
+	);
+}
+
+function EditValueButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+	return (
+		<button type="button" aria-label={label} title={label} onClick={onClick} className={accountTextLinkClass}>
+			{children}
+			<PencilIcon className="size-3 text-fg-muted" />
+		</button>
 	);
 }
 
@@ -448,6 +502,16 @@ function getOrderValueText(detail: ReturnType<typeof orderHistoryDetails>, quote
 	if (detail.market) return "Market";
 	if (detail.value) return formatToken(detail.value, { decimals: 2, symbol: quote, compact: false });
 	return "--";
+}
+
+function getSizeText(closeOrder: boolean, size: string): string {
+	if (closeOrder) return "Close Position";
+	return size;
+}
+
+function getPriceText(market: boolean, price: string): string {
+	if (market) return "Market";
+	return price;
 }
 
 function getReduceOnlyText(spot: boolean, reduceOnly: boolean | undefined): string {

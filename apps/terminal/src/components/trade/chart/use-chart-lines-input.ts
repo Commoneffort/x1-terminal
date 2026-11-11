@@ -1,9 +1,10 @@
-import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import type { ChartLine, ChartLineOrder, ChartLinesInput, Tone } from "@/lib/chart/chart-lines";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { isMarketTriggerOrder, isStopOrder, isTakeProfitOrder, type OpenOrder } from "@/lib/trade/open-orders";
+import { useChartMarksStore } from "@/stores/use-chart-marks-store";
 
 function lineOrder(order: OpenOrder, tp: boolean): ChartLineOrder | null {
 	if (!(Number(order.sz) > 0)) return null;
@@ -20,7 +21,8 @@ function lineOrder(order: OpenOrder, tp: boolean): ChartLineOrder | null {
 }
 
 export function useChartLinesInput(symbol: string, dex?: string): ChartLinesInput {
-	const { address, isConnected } = useConnection();
+	const hidden = useChartMarksStore((state) => state.hidden);
+	const { address, isConnected } = useTradingAccount();
 	const markets = useMarkets();
 	const { getPosition } = useUserPositions();
 	const { data: openOrdersEvent } = useSubscription(
@@ -103,5 +105,10 @@ export function useChartLinesInput(symbol: string, dex?: string): ChartLinesInpu
 	const mark = Number(midsEvent?.mids?.[symbol]);
 	const positionSide = position && Number.isFinite(szi) && szi !== 0 ? (szi > 0 ? "long" : "short") : null;
 	const shortName = market?.shortName ?? symbol;
-	return { lines, markPx: Number.isFinite(mark) && mark > 0 ? mark : null, symbol: shortName, positionSide };
+	return {
+		lines: hidden ? [] : lines,
+		markPx: Number.isFinite(mark) && mark > 0 ? mark : null,
+		symbol: shortName,
+		positionSide,
+	};
 }

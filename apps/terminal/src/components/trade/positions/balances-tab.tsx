@@ -120,7 +120,7 @@ export function BalancesTab() {
 	function getWithdrawAsset(asset: string): "SOL" | "ETH" {
 		if (asset === "UETH" || asset === "ETH") return "ETH";
 		if (asset === "USOL" || asset === "SOL") return "SOL";
-		return connector?.id === "phantom" ? "ETH" : "SOL";
+		return connector?.id === "phantom" || connector?.id === "rabby" ? "ETH" : "SOL";
 	}
 
 	function getPerpTag(shared: boolean): string {

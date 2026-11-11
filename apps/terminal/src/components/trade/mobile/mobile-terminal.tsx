@@ -1,5 +1,5 @@
-import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
@@ -20,7 +20,7 @@ interface Props {
 export function MobileTerminal({ className }: Props) {
 	const activeTab = useMobileActiveTab() as MobileTab;
 	const { setMobileActiveTab } = useGlobalSettingsActions();
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { positions } = useUserPositions();
 
 	const { data: ordersEvent } = useSubscription(

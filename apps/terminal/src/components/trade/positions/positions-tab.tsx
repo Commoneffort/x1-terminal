@@ -16,14 +16,15 @@ import {
 import { t } from "@lingui/core/macro";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useSubmitPlan } from "@/hooks/trade/use-submit-plan";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
-import { type Position, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { closePositionsInSequence } from "@/lib/positions/close-all";
+import { type PositionSort, type PositionSortKey, sortPositions } from "@/lib/positions/sort-positions";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -52,17 +53,34 @@ import { SortHeadButton } from "./sort-head-button";
 
 type CloseIntent = "close" | "reverse";
 
-const byValue = (p: Position) => Number(p.positionValue);
 const headClassName = "h-9 px-3";
 
+const SORT_FIELDS: Record<string, readonly { label: string; key: PositionSortKey }[]> = {
+	Asset: [{ label: "Asset", key: "market" }],
+	Size: [{ label: "Size", key: "size" }],
+	Value: [{ label: "Value", key: "value" }],
+	Entry: [{ label: "Entry", key: "entry" }],
+	Mark: [{ label: "Mark", key: "mark" }],
+	PNL: [
+		{ label: "PNL", key: "pnl" },
+		{ label: "ROE", key: "roe" },
+	],
+	Liquidation: [{ label: "Liquidation", key: "liquidation" }],
+	Margin: [{ label: "Margin", key: "margin" }],
+	Funding: [{ label: "Funding", key: "funding" }],
+	"TP / SL": [
+		{ label: "TP", key: "tp" },
+		{ label: "SL", key: "sl" },
+	],
+};
+
 export function PositionsTab() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const slippageBps = useMarketOrderSlippageBps();
 	const currentAddress = useRef(address);
 	currentAddress.current = address;
 	const headings = POSITION_HEADINGS;
-	const [sortDescending, setSortDescending] = useState(true);
-	const [sortLabel, setSortLabel] = useState(() => headings.find((h) => h.sort)?.label ?? "");
+	const [sort, setSort] = useState<PositionSort>({ key: "value", descending: true });
 	const [closeAllOpen, setCloseAllOpen] = useState(false);
 	const [closingAll, setClosingAll] = useState(false);
 	const closeAllBusy = useRef(false);
@@ -144,12 +162,13 @@ export function PositionsTab() {
 
 	const sortedPositions = useMemo(
 		() =>
-			[...positions].sort((a, b) => {
-				const heading = headings.find((h) => h.label === sortLabel);
-				const key = heading?.sortBy ?? byValue;
-				return (key(a) - key(b)) * (sortDescending ? -1 : 1);
-			}),
-		[positions, sortDescending, sortLabel, headings],
+			sortPositions(
+				positions,
+				sort,
+				tpSlOrdersByCoin,
+				(coin) => markets.getMarket(coin)?.shortName ?? coin.split(":").at(-1) ?? coin,
+			),
+		[positions, sort, tpSlOrdersByCoin, markets],
 	);
 	const closeAllData = positions.map((p) => {
 		const market = markets.getMarket(p.coin);
@@ -222,13 +241,31 @@ export function PositionsTab() {
 	}
 
 	const placeholder = renderPlaceholder();
-	function toggleSort(label: string) {
-		if (label === sortLabel) {
-			setSortDescending((value) => !value);
-			return;
-		}
-		setSortLabel(label);
-		setSortDescending(true);
+	function handleSort(key: PositionSortKey) {
+		setSort((previous) => ({
+			key,
+			descending: previous.key === key ? !previous.descending : key !== "market",
+		}));
+	}
+
+	function renderHeadContent(label: string) {
+		const fields = SORT_FIELDS[label];
+		if (!fields) return label;
+		return (
+			<span className="inline-flex items-center gap-1">
+				{fields.map((field, index) => (
+					<span key={field.key} className="inline-flex items-center gap-1">
+						{index > 0 && <span aria-hidden="true">/</span>}
+						<SortHeadButton
+							label={field.label}
+							active={sort.key === field.key}
+							descending={sort.descending}
+							onToggle={() => handleSort(field.key)}
+						/>
+					</span>
+				))}
+			</span>
+		);
 	}
 
 	return (
@@ -250,18 +287,12 @@ export function PositionsTab() {
 												heading.numeric && accountNumHeadClass,
 												heading.className,
 											)}
-											aria-sort={getAriaSort(heading.label === sortLabel, sortDescending)}
-										>
-											{heading.sort || heading.sortBy ? (
-												<SortHeadButton
-													label={heading.label}
-													active={heading.label === sortLabel}
-													descending={sortDescending}
-													onToggle={() => toggleSort(heading.label)}
-												/>
-											) : (
-												heading.label
+											aria-sort={getAriaSort(
+												!!SORT_FIELDS[heading.label]?.some((field) => field.key === sort.key),
+												sort.descending,
 											)}
+										>
+											{renderHeadContent(heading.label)}
 										</TableHead>
 									))}
 									<TableHead

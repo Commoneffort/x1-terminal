@@ -19,7 +19,7 @@ import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { useAgentRegistration, useAgentWallet, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -64,7 +64,7 @@ export function MobileTradeView({ className }: Props) {
 		setSelectedMarket(scope, marketName);
 	}
 
-	const { isReady: isAgentApproved } = useAgentStatus();
+	const { isReady: isAgentApproved } = useAgentWallet();
 	const { status: registerStatus } = useAgentRegistration();
 
 	const canApprove = !!walletClient && !!address;
@@ -113,6 +113,7 @@ export function MobileTradeView({ className }: Props) {
 
 	const {
 		isSpotMarket,
+		isReducing,
 		baseToken,
 		quoteToken,
 		capabilities,
@@ -137,7 +138,7 @@ export function MobileTradeView({ className }: Props) {
 		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
-	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput, reduceOnly });
 
 	useEffect(() => {
 		if (selectedPrice !== null) {
@@ -151,9 +152,10 @@ export function MobileTradeView({ className }: Props) {
 	const feeRate = isMarketExecution ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
 	const estimatedFee = orderValue * feeRate;
-	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
+	const marginRequired = !isReducing && capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
 
-	const liqPrice = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }).liqPrice : null;
+	const liqPrice =
+		!isReducing && capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }).liqPrice : null;
 
 	const baseInput = {
 		isConnected,
@@ -180,6 +182,7 @@ export function MobileTradeView({ className }: Props) {
 				})
 			: perpInput(baseInput, {
 					orderType,
+					reduceOnly: isReducing,
 					markPx,
 					maxSize,
 					usesTriggerPrice: false,
@@ -226,6 +229,10 @@ export function MobileTradeView({ className }: Props) {
 	}
 
 	async function handleSubmit() {
+		if (!isAgentApproved) {
+			await handleApprove();
+			return;
+		}
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -273,6 +280,7 @@ export function MobileTradeView({ className }: Props) {
 	}
 
 	const buttonContent = getMobileOrderButtonContent({
+		reduceOnly: isReducing,
 		isConnected,
 		needsChainSwitch,
 		isSwitchingChain,
@@ -291,13 +299,13 @@ export function MobileTradeView({ className }: Props) {
 		onSubmit: handleSubmit,
 	});
 
-	const isFormDisabled = !isConnected || availableBalance <= 0;
+	const isFormDisabled = !isConnected || (!isReducing && availableBalance <= 0);
 	const isSliderDisabled = isFormDisabled || maxSize <= 0;
 	const sizeUnit = (sizeMode === "base" ? baseToken : quoteToken) || FALLBACK_VALUE_PLACEHOLDER;
 
 	function formatAvailableBalance(): string {
 		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
-		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
+		const decimals = isReducing || (isSpotMarket && side === "sell") ? szDecimals : 2;
 		return formatToken(availableBalance, decimals);
 	}
 
@@ -354,7 +362,7 @@ export function MobileTradeView({ className }: Props) {
 				/>
 				<div className="px-3 py-3 flex flex-col gap-3">
 					<InfoRow
-						label={ORDER_TEXT.AVAILABLE_LABEL}
+						label={isReducing ? t`Reducible` : ORDER_TEXT.AVAILABLE_LABEL}
 						value={
 							<>
 								{formatAvailableBalance()}
@@ -433,7 +441,7 @@ export function MobileTradeView({ className }: Props) {
 								<Checkbox
 									checked={reduceOnly}
 									onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
-									disabled={isFormDisabled}
+									disabled={!isConnected}
 									label={ORDER_TEXT.REDUCE_ONLY_LABEL}
 								/>
 							)}
@@ -531,6 +539,7 @@ function formatPercentValue(value: number): string {
 }
 
 interface MobileButtonContentInput {
+	reduceOnly?: boolean;
 	isConnected: boolean;
 	needsChainSwitch: boolean;
 	isSwitchingChain: boolean;
@@ -566,7 +575,7 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			variant: "cyan",
 		};
 	}
-	if (input.availableBalance <= 0) {
+	if (input.availableBalance <= 0 && !input.reduceOnly) {
 		return {
 			text: ORDER_TEXT.BUTTON_DEPOSIT,
 			action: input.onDeposit,
@@ -578,7 +587,7 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 		return {
 			text: getApprovalButtonText(input.isRegistering, input.canApprove),
 			action: input.onApprove,
-			disabled: input.isRegistering || !input.canApprove,
+			disabled: input.isRegistering,
 			variant: "cyan",
 		};
 	}
@@ -592,6 +601,6 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 
 function getApprovalButtonText(isRegistering: boolean, canApprove: boolean): string {
 	if (isRegistering) return ORDER_TEXT.BUTTON_SIGNING;
-	if (!canApprove) return ORDER_TEXT.BUTTON_LOADING;
+	if (!canApprove) return t`Approve trading`;
 	return ORDER_TEXT.BUTTON_ENABLE_TRADING;
 }

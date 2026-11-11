@@ -1,6 +1,7 @@
-import { Button, Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
+import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { formatTransferError } from "@/lib/errors/format";
 import { useDeposit } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -17,6 +18,7 @@ const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "
 const DEPOSIT_TAB_MIN_HEIGHT = "min-h-72";
 
 export function DepositModal() {
+	const { isSubaccount } = useTradingAccount();
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
 	const { close, setTab } = useDepositModalActions();
@@ -54,6 +56,26 @@ export function DepositModal() {
 	}
 
 	if (!open) return null;
+	if (isSubaccount) {
+		return (
+			<Modal open onOpenChange={handleClose}>
+				<ModalPopup size="sm">
+					<ModalHeader>
+						<ModalTitle>Subaccount funding</ModalTitle>
+						<ModalDescription>
+							Select Main account in the top-right account menu for deposits and withdrawals. Funding transfers between
+							the main account and subaccounts are not configured in this terminal yet.
+						</ModalDescription>
+					</ModalHeader>
+					<ModalContent>
+						<Button variant="filled" intent="neutral" size="md" onClick={handleClose} className="w-full">
+							Close
+						</Button>
+					</ModalContent>
+				</ModalPopup>
+			</Modal>
+		);
+	}
 	if (activeTab === "withdraw") return <NativeWithdrawModal onClose={handleClose} />;
 	if (activeTab === "deposit") return <NativeDepositModal open={open} onClose={handleClose} />;
 	if (activeTab === "wallet") return <WalletDepositModal open={open} onClose={handleClose} />;

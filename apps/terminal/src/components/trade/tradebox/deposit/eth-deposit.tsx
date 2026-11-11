@@ -22,7 +22,9 @@ export function EthDeposit() {
 	const testnet = useIsTestnet();
 	if (!address)
 		return (
-			<p className="py-4 text-xs text-fg-muted">Connect Phantom or X1 Wallet to generate an ETH deposit address.</p>
+			<p className="py-4 text-xs text-fg-muted">
+				Connect Rabby, Phantom or X1 Wallet to generate an ETH deposit address.
+			</p>
 		);
 	if (testnet)
 		return (
@@ -39,6 +41,8 @@ function EthDepositAccount({ recipient }: { recipient: `0x${string}` }) {
 	const { mutateAsync: switchChain, isPending: switching } = useSwitchChain();
 	const { mutateAsync: send, data: hash, isPending: sending, error: sendError } = useSendTransaction();
 	const receipt = useWaitForTransactionReceipt({ hash, chainId: mainnet.id, query: { enabled: !!hash } });
+	const supportsEth = connector?.id === "phantom" || connector?.id === "rabby";
+	const walletName = connector?.id === "rabby" ? "Rabby" : "Phantom";
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const { copied, copy } = useCopyToClipboard();
@@ -60,7 +64,7 @@ function EthDepositAccount({ recipient }: { recipient: `0x${string}` }) {
 		setError(null);
 		try {
 			if (!depositAddress.data) throw new Error("Wait for a verified deposit address.");
-			if (connector?.id !== "phantom") throw new Error("Use an Ethereum wallet to send ETH to the displayed address.");
+			if (!supportsEth) throw new Error("Use an Ethereum wallet to send ETH to the displayed address.");
 			const value = parseEthDepositAmount(amount);
 			if (chainId !== mainnet.id) await switchChain({ chainId: mainnet.id });
 			await send({ account: recipient, to: depositAddress.data, value, chainId: mainnet.id });
@@ -107,7 +111,7 @@ function EthDepositAccount({ recipient }: { recipient: `0x${string}` }) {
 				</>
 			)}
 
-			{connector?.id === "phantom" && depositAddress.data && !hash && (
+			{supportsEth && depositAddress.data && !hash && (
 				<>
 					<TextInput
 						id={amountId}
@@ -128,11 +132,7 @@ function EthDepositAccount({ recipient }: { recipient: `0x${string}` }) {
 						onClick={() => void sendEth()}
 						disabled={sending || switching || !amount}
 					>
-						{switching
-							? "Switching to Ethereum…"
-							: sending
-								? "Confirm ETH transfer in Phantom…"
-								: "Send ETH with Phantom"}
+						{getSendLabel(switching, sending, walletName)}
 					</Button>
 				</>
 			)}
@@ -164,4 +164,10 @@ function EthDepositAccount({ recipient }: { recipient: `0x${string}` }) {
 			</p>
 		</div>
 	);
+}
+
+function getSendLabel(switching: boolean, sending: boolean, walletName: string) {
+	if (switching) return "Switching to Ethereum…";
+	if (sending) return `Confirm ETH transfer in ${walletName}…`;
+	return `Send ETH with ${walletName}`;
 }

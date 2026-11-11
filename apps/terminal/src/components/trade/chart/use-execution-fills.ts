@@ -1,15 +1,7 @@
-import { useConnection } from "wagmi";
+import { useTradeHistory } from "@/hooks/use-trade-history";
 import type { ExecutionFill } from "@/lib/chart/execution-markers";
-import { useSubscription } from "@/lib/hyperliquid";
 
-const EMPTY: ExecutionFill[] = [];
+/** Share the account-scoped, cached 24-hour history with the trade table. */
 export function useExecutionFills(): readonly ExecutionFill[] {
-	const { address, isConnected } = useConnection();
-	const { data } = useSubscription(
-		"userFills",
-		{ user: address ?? "0x0", aggregateByTime: true },
-		{ enabled: isConnected && !!address },
-	);
-	if (!isConnected || !address || data?.user.toLowerCase() !== address.toLowerCase()) return EMPTY;
-	return data.fills;
+	return useTradeHistory().fills;
 }

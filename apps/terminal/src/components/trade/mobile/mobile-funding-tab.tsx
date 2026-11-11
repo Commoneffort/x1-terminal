@@ -1,6 +1,6 @@
+import {useTradingAccount} from "@/hooks/use-trading-account";
 import { t } from "@lingui/core/macro";
 import { Skeleton } from "boneyard-js/react";
-import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function MobileFundingTab({ className }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const {

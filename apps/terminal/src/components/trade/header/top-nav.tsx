@@ -12,6 +12,7 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { useTerminalBrand } from "./terminal-brand";
 import X1TerminalLogo from "./x1-terminal-logo";
 
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
@@ -20,6 +21,7 @@ const NAV_LINK_CLASS =
 	"relative flex h-7 items-center rounded-8 px-3 text-sm font-normal transition-colors duration-150";
 
 export function TopNav() {
+	const brand = useTerminalBrand();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { isConnected } = useConnection();
@@ -35,14 +37,15 @@ export function TopNav() {
 			)}
 		>
 			<div className="flex min-w-0 items-center gap-6">
-				<X1TerminalLogo />
+				{brand ?? <X1TerminalLogo />}
 				<nav className="hidden items-center gap-1 lg:flex">
 					{SCOPE_NAV_ITEMS.map((item) => {
 						const isActive = scope === item.scope;
 						return (
 							<Link
 								key={item.scope}
-								to={item.to}
+								to={brand ? "/newtheme" : item.to}
+								search={brand ? { scope: item.scope } : {}}
 								aria-current={isActive ? "page" : undefined}
 								className={cn(NAV_LINK_CLASS, isActive ? item.activeClass : "text-fg-muted hover:text-fg")}
 							>
@@ -51,17 +54,23 @@ export function TopNav() {
 						);
 					})}
 					<Divider orientation="vertical" className="mx-2 h-4 self-center" />
-					{STATIC_NAV_ITEMS.map((item) => (
-						<button
-							key={item.key}
-							type="button"
-							disabled
-							tabIndex={-1}
-							className={cn(NAV_LINK_CLASS, "cursor-not-allowed text-fg-disabled")}
-						>
-							{item.label}
-						</button>
-					))}
+					{STATIC_NAV_ITEMS.map((item) =>
+						item.key === "auto-trader" ? (
+							<a key={item.key} href="/API#auto-trader" className={cn(NAV_LINK_CLASS, "text-fg-muted hover:text-fg")}>
+								{item.label}
+							</a>
+						) : (
+							<button
+								key={item.key}
+								type="button"
+								disabled
+								tabIndex={-1}
+								className={cn(NAV_LINK_CLASS, "cursor-not-allowed text-fg-disabled")}
+							>
+								{item.label}
+							</button>
+						),
+					)}
 				</nav>
 			</div>
 

@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
+import { getPositionMarkPrice } from "@/lib/positions/valuation";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -52,15 +53,17 @@ export function MobilePositionCard({
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
+	const valuationMark = getPositionMarkPrice(p);
+	const valuationMarkNum = toBig(valuationMark)?.toNumber() ?? Number.NaN;
 	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
 	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
 	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
 	const liqPx = toBig(p.liquidationPx)?.toNumber();
 	const liqIsNear =
 		liqPx != null &&
-		Number.isFinite(markPx) &&
+		Number.isFinite(valuationMarkNum) &&
 		Number.isFinite(liqPx) &&
-		Math.abs(liqPx - markPx) / markPx <= LIQ_WARNING_PROXIMITY;
+		Math.abs(liqPx - valuationMarkNum) / valuationMarkNum <= LIQ_WARNING_PROXIMITY;
 
 	const fundingRaw = toBig(p.cumFunding.sinceOpen)?.toNumber();
 	const fundingValue = formatUSD(fundingRaw != null ? -fundingRaw : null, { signDisplay: "exceptZero" });
@@ -147,7 +150,7 @@ export function MobilePositionCard({
 					<span className="text-xs tabular-nums text-fg-muted">{formatPercent(p.returnOnEquity, 1)}</span>
 					<PositionPnlShare
 						position={p}
-						markPx={markPxRaw}
+						markPx={valuationMark}
 						symbol={market?.shortName ?? p.coin.split(":").pop() ?? p.coin}
 						szDecimals={szDecimals}
 					/>
@@ -167,7 +170,7 @@ export function MobilePositionCard({
 					}
 				/>
 				<MetricCell label={t`Entry`} value={formatPrice(entryPx, { szDecimals })} />
-				<MetricCell label={t`Mark`} value={formatPrice(markPx, { szDecimals })} align="end" />
+				<MetricCell label={t`Mark`} value={formatPrice(valuationMark, { szDecimals })} align="end" />
 				<MetricCell
 					label={p.leverage.type === "isolated" ? t`Margin · Iso` : t`Margin`}
 					value={formatUSD(p.marginUsed)}

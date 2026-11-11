@@ -8,6 +8,8 @@ export interface PnlCardData {
 	entryPrice: string;
 	markPrice: string;
 	timestamp: string;
+	/** Present for closed-trade snapshots (history fills); absent for open positions. */
+	trade?: { direction: string; quote: string; size: string; fee: string };
 }
 export { buildPnlCardSvg } from "./pnl-card-horizon";
 

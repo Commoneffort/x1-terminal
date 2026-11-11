@@ -108,6 +108,14 @@ function formatPnl(pnl: number): string {
 	return `${pnl < 0 ? MINUS : "+"}$${digits}`;
 }
 
+function formatTradePnl(pnl: number): string {
+	if (!Number.isFinite(pnl)) return "n/a";
+	const digits = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+		Math.abs(pnl),
+	);
+	return `${pnl < 0 ? MINUS : "+"}${digits}`;
+}
+
 function formatLeverage(leverage: number): string {
 	return Number.isFinite(leverage) && leverage > 0 ? `${leverage}x` : "n/a";
 }
@@ -428,7 +436,8 @@ function backgroundDefs(gain: boolean, roeRight: number): string {
 export function buildPnlCardSvg(data: PnlCardData): string {
 	const gain = Number.isFinite(data.pnl) ? data.pnl >= 0 : data.roe >= 0;
 	const accent = gain ? UP : DOWN;
-	const roe = formatRoe(data.roe);
+	const trade = data.trade;
+	const hero = trade ? formatTradePnl(data.pnl) : formatRoe(data.roe);
 	const pnl = formatPnl(data.pnl);
 	const left = 64;
 	const right = CARD_WIDTH - 64;
@@ -436,29 +445,42 @@ export function buildPnlCardSvg(data: PnlCardData): string {
 	parts.push(`<rect width="${CARD_WIDTH}" height="${CARD_HEIGHT}" fill="${GROUND}"/>`);
 	parts.push(background(gain, ROE_MAX_RIGHT));
 	parts.push(logo(left, 50, 40, FG));
-	parts.push(microLabel(right, capBaseline(74, 16), "Position snapshot", MUTED, "end"));
+	parts.push(microLabel(right, capBaseline(74, 16), trade ? "Trade snapshot" : "Position snapshot", MUTED, "end"));
 
 	const symbolSize = fitSize(data.symbol, 640, 40, 600);
 	parts.push(
 		`<text x="${inkX(left, data.symbol, symbolSize, 600)}" y="214" font-size="${symbolSize}" font-weight="600" fill="${FG}">${xml(data.symbol)}</text>`,
 	);
-	const sideLine = `${data.side} ${formatLeverage(data.leverage).toUpperCase()}${data.dex ? ` · ${data.dex.slice(0, 20).toUpperCase()}` : ""}`;
+	const dexSuffix = data.dex ? ` · ${data.dex.slice(0, 20).toUpperCase()}` : "";
+	const sideLine = trade
+		? `${trade.direction.toUpperCase()}${dexSuffix}`
+		: `${data.side} ${formatLeverage(data.leverage).toUpperCase()}${dexSuffix}`;
 	parts.push(
 		`<text x="${inkX(left, sideLine, 20, 600)}" y="262" font-size="20" font-weight="600" letter-spacing="1.2" fill="${accent}">${xml(sideLine)}</text>`,
 	);
-	const roeSize = fitSize(roe, ROE_MAX_RIGHT - left, 156, 600, -0.03);
+	const heroSize = fitSize(hero, ROE_MAX_RIGHT - left, 156, 600, -0.03);
 	parts.push(
-		`<text x="${inkX(left, roe, roeSize, 600)}" y="430" font-size="${roeSize}" font-weight="600" letter-spacing="${-0.03 * roeSize}" fill="${accent}">${xml(roe)}</text>`,
+		`<text x="${inkX(left, hero, heroSize, 600)}" y="430" font-size="${heroSize}" font-weight="600" letter-spacing="${-0.03 * heroSize}" fill="${accent}">${xml(hero)}</text>`,
 	);
-	const pnlLabelWidth = textWidth("UNREALIZED PNL", 16, 500, 0.06);
-	parts.push(microLabel(left, 500, "Unrealized PNL", MUTED));
-	parts.push(
-		`<text x="${left + pnlLabelWidth + 16}" y="500" font-size="28" font-weight="500" fill="${accent}">${xml(pnl)}</text>`,
-	);
-	const columns = [
-		{ label: "Entry price", value: data.entryPrice },
-		{ label: "Mark price", value: data.markPrice },
-	];
+	if (trade) {
+		parts.push(microLabel(left, 500, `Realized PNL · ${trade.quote}`, MUTED));
+	} else {
+		const pnlLabelWidth = textWidth("UNREALIZED PNL", 16, 500, 0.06);
+		parts.push(microLabel(left, 500, "Unrealized PNL", MUTED));
+		parts.push(
+			`<text x="${left + pnlLabelWidth + 16}" y="500" font-size="28" font-weight="500" fill="${accent}">${xml(pnl)}</text>`,
+		);
+	}
+	const columns = trade
+		? [
+				{ label: "Fill price", value: data.entryPrice },
+				{ label: "Size", value: trade.size },
+				{ label: "Fee", value: trade.fee },
+			]
+		: [
+				{ label: "Entry price", value: data.entryPrice },
+				{ label: "Mark price", value: data.markPrice },
+			];
 	let columnX = left;
 	for (const column of columns) {
 		parts.push(microLabel(columnX, 588, column.label, MUTED));
@@ -470,7 +492,7 @@ export function buildPnlCardSvg(data: PnlCardData): string {
 	}
 	parts.push(`<rect x="${left}" y="672" width="${right - left}" height="1" fill="${HAIRLINE}"/>`);
 	parts.push(
-		`<text x="${inkX(left, data.timestamp, 15, 500)}" y="714" font-size="15" fill="${FAINT}">${xml(`${data.timestamp} · Hyperliquid · Unrealized PNL may change`)}</text>`,
+		`<text x="${inkX(left, data.timestamp, 15, 500)}" y="714" font-size="15" fill="${FAINT}">${xml(trade ? `${data.timestamp} · Hyperliquid` : `${data.timestamp} · Hyperliquid · Unrealized PNL may change`)}</text>`,
 	);
 	parts.push(
 		`<text x="${right}" y="714" font-size="15" font-weight="500" fill="${MUTED}" text-anchor="end">terminal.x1.xyz</text>`,

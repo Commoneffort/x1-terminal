@@ -1,26 +1,27 @@
 import { ButtonIcon, TableCell, TableRow, Tooltip } from "@hypeterminal/ui";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { AssetDisplay } from "@/components/trade/components/asset-display";
+import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { getPositionMarkPrice } from "@/lib/positions/valuation";
+import { toBig } from "@/lib/trade/numbers";
 import { PositionPnlShare } from "./position-pnl-share";
 import { PositionRowActions } from "./position-row-actions";
 import { getPositionRowModel } from "./position-row-model";
 import type { PositionHeading, PositionRowProps } from "./position-row-types";
 import { getMarketValueClass } from "./positions-panel-table-styles";
 
-const n = (v: unknown) => Number(v) || 0;
-
 export const POSITION_HEADINGS: readonly PositionHeading[] = [
-	{ label: "Asset", numeric: false, sortBy: (p) => p.coin.charCodeAt(0) },
-	{ label: "Size", numeric: true, sortBy: (p) => Math.abs(n(p.szi)) },
-	{ label: "Value", numeric: true, sort: true },
-	{ label: "Entry", numeric: true, sortBy: (p) => n(p.entryPx) },
-	{ label: "Mark", numeric: true, sortBy: (p) => n(p.positionValue) / Math.max(Math.abs(n(p.szi)), 1e-12) },
-	{ label: "PNL", numeric: true, sortBy: (p) => n(p.unrealizedPnl) },
-	{ label: "Liquidation", numeric: true, sortBy: (p) => n(p.liquidationPx) },
-	{ label: "Margin", numeric: true, sortBy: (p) => n(p.marginUsed) },
-	{ label: "Funding", numeric: true, sortBy: (p) => -n(p.cumFunding.sinceOpen) },
+	{ label: "Asset", numeric: false },
+	{ label: "Size", numeric: true },
+	{ label: "Value", numeric: true },
+	{ label: "Entry", numeric: true },
+	{ label: "Mark", numeric: true },
+	{ label: "PNL", numeric: true },
+	{ label: "Liquidation", numeric: true },
+	{ label: "Margin", numeric: true },
+	{ label: "Funding", numeric: true },
 	{ label: "TP / SL", numeric: true },
 ];
 
@@ -30,6 +31,14 @@ const num = cn(cell, "text-right");
 export function PositionRow(props: PositionRowProps) {
 	const m = getPositionRowModel(props);
 	const { p } = m;
+	const valuationMark = getPositionMarkPrice(p);
+	const valuationMarkNum = toBig(valuationMark)?.toNumber() ?? Number.NaN;
+	const liqPx = toBig(p.liquidationPx)?.toNumber();
+	const liqIsNear =
+		liqPx != null &&
+		Number.isFinite(valuationMarkNum) &&
+		Number.isFinite(liqPx) &&
+		Math.abs(liqPx - valuationMarkNum) / valuationMarkNum <= LIQ_WARNING_PROXIMITY;
 	return (
 		<TableRow className="group border-0">
 			<TableCell className={cell}>
@@ -56,7 +65,7 @@ export function PositionRow(props: PositionRowProps) {
 			</TableCell>
 			<TableCell className={num}>{formatUSD(p.positionValue, { compact: false })}</TableCell>
 			<TableCell className={num}>${m.fmt(p.entryPx)}</TableCell>
-			<TableCell className={num}>${m.fmt(m.markPx)}</TableCell>
+			<TableCell className={num}>{valuationMark ? `$${m.fmt(valuationMark)}` : "—"}</TableCell>
 			<TableCell className={num}>
 				<div className="inline-flex items-center justify-end gap-1.5">
 					<span className={getMarketValueClass(m.unrealizedPnl)}>
@@ -64,11 +73,11 @@ export function PositionRow(props: PositionRowProps) {
 						{formatPercent(p.returnOnEquity, { decimals: 2, signDisplay: "exceptZero" })})
 					</span>
 					<span className="text-fg-muted">
-						<PositionPnlShare position={p} markPx={props.markPx} symbol={m.symbol} szDecimals={m.szDecimals} />
+						<PositionPnlShare position={p} markPx={valuationMark} symbol={m.symbol} szDecimals={m.szDecimals} />
 					</span>
 				</div>
 			</TableCell>
-			<TableCell className={cn(num, m.liqIsNear && "text-market-down")}>
+			<TableCell className={cn(num, liqIsNear && "text-market-down")}>
 				{p.liquidationPx === null ? "—" : `$${m.fmt(p.liquidationPx)}`}
 			</TableCell>
 			<TableCell className={num}>{formatUSD(p.marginUsed, { compact: false })}</TableCell>
@@ -79,7 +88,14 @@ export function PositionRow(props: PositionRowProps) {
 					<span className="text-fg-muted">/</span>
 					<span>{m.slText ?? "—"}</span>
 					<Tooltip content={m.tpSlLabel}>
-						<ButtonIcon variant="ghost" intent="neutral" size="xs" aria-label={m.tpSlLabel} onClick={m.openTpSl}>
+						<ButtonIcon
+							variant="ghost"
+							intent="neutral"
+							size="xs"
+							aria-label={`${m.tpSlLabel} for ${m.symbol}`}
+							disabled={typeof m.assetId !== "number"}
+							onClick={m.openTpSl}
+						>
 							<PencilSimpleIcon className="size-3.5 text-fg-muted" />
 						</ButtonIcon>
 					</Tooltip>

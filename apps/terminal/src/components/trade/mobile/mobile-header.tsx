@@ -1,5 +1,6 @@
 import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
+import { useTerminalBrand } from "../header/terminal-brand";
 import { UserMenu } from "../header/user-menu";
 import X1TerminalLogo from "../header/x1-terminal-logo";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export function MobileHeader({ className }: Props) {
+	const brand = useTerminalBrand();
+
 	return (
 		<header className={cn("pt-[env(safe-area-inset-top)]", "sticky top-0 z-40 bg-surface", className)}>
 			<div
@@ -17,7 +20,7 @@ export function MobileHeader({ className }: Props) {
 					"box-border pl-4 pr-2 flex items-center justify-between gap-3 border-b border-stroke-weak",
 				)}
 			>
-				<X1TerminalLogo />
+				{brand ?? <X1TerminalLogo />}
 				<div className="flex shrink-0 items-center gap-1">
 					<UserMenu />
 					<MobileNavDrawer />

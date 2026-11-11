@@ -1,9 +1,9 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -29,10 +29,10 @@ import {
 	getAriaSort,
 } from "./positions-panel-table-styles";
 import { SortHeadButton } from "./sort-head-button";
-import { useWithdrawalHistory, WithdrawalLinks } from "./withdrawal-history";
+import { TransferLinks, useTransferHistory } from "./withdrawal-history";
 
 export function OrdersHistoryTab() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const markets = useMarkets();
@@ -45,7 +45,7 @@ export function OrdersHistoryTab() {
 		{ user: address ?? "0x0" },
 		{ enabled: isConnected && !!address },
 	);
-	const withdrawalHistory = useWithdrawalHistory(isConnected ? address : undefined);
+	const transferHistory = useTransferHistory(isConnected ? address : undefined);
 	const all = data?.orderHistory ?? [];
 	const orders = all
 		.filter(
@@ -55,8 +55,8 @@ export function OrdersHistoryTab() {
 		.slice()
 		.sort((a, b) => (descending ? b.statusTimestamp - a.statusTimestamp : a.statusTimestamp - b.statusTimestamp))
 		.slice(0, MAX_HISTORY_ROWS);
-	const withdrawals = withdrawalHistory.rows.filter(
-		(row) => (!type || type === "Withdrawal") && !side && (!coin || coin === row.asset),
+	const withdrawals = transferHistory.rows.filter(
+		(row) => (!type || type === row.kind) && !side && (!coin || coin === row.asset),
 	);
 	const timeline = [
 		...orders.map((entry) => ({ kind: "order" as const, time: entry.statusTimestamp, entry })),
@@ -69,19 +69,19 @@ export function OrdersHistoryTab() {
 			label: "Type",
 			value: type,
 			set: setType,
-			values: [...new Set([...all.map((e) => e.order.orderType), "Withdrawal"])],
+			values: [...new Set([...all.map((e) => e.order.orderType), "Withdrawal", "Deposit"])],
 		},
 		{ label: "Side", value: side, set: setSide, values: ["B", "A"] },
 		{
 			label: "Market",
 			value: coin,
 			set: setCoin,
-			values: [...new Set([...all.map((e) => e.order.coin), ...withdrawalHistory.rows.map((row) => row.asset)])],
+			values: [...new Set([...all.map((e) => e.order.coin), ...transferHistory.rows.map((row) => row.asset)])],
 		},
 	];
 	function renderPlaceholder() {
 		if (!isConnected) return <ConnectPlaceholder message={t`Connect your wallet to view order history.`} />;
-		if (!timeline.length && (status === "subscribing" || status === "idle" || withdrawalHistory.loading)) {
+		if (!timeline.length && (status === "subscribing" || status === "idle" || transferHistory.loading)) {
 			return <LoadingRows label={t`Loading order history...`} />;
 		}
 		if (!timeline.length && status === "error") {
@@ -95,9 +95,9 @@ export function OrdersHistoryTab() {
 		if (!timeline.length) {
 			return (
 				<Placeholder>
-					{all.length || withdrawalHistory.rows.length
+					{all.length || transferHistory.rows.length
 						? "No orders match these filters."
-						: "No order or withdrawal history found."}
+						: "No order, deposit or withdrawal history found."}
 				</Placeholder>
 			);
 		}
@@ -176,12 +176,14 @@ export function OrdersHistoryTab() {
 										return (
 											<TableRow key={`withdrawal:${row.id}`} className={accountRowClass}>
 												<TableCell className={accountCellClass}>{formatDateTime(row.time, dateTimeOptions)}</TableCell>
-												<TableCell className={accountCellClass}>Withdrawal</TableCell>
+												<TableCell className={accountCellClass}>{row.kind}</TableCell>
 												<TableCell className={cn(accountCellClass, "font-medium")}>{row.asset}</TableCell>
 												<TableCell className={accountCellClass}>
 													<span title={row.destination || undefined}>
-														To {row.chain}
-														{row.destination ? ` · ${row.destination.slice(0, 6)}…${row.destination.slice(-4)}` : ""}
+														{row.kind === "Deposit" ? "From" : "To"} {row.chain}
+														{row.kind !== "Deposit" && row.destination
+															? ` · ${row.destination.slice(0, 6)}…${row.destination.slice(-4)}`
+															: ""}
 													</span>
 												</TableCell>
 												<TableCell className={numCellClass}>{row.amount}</TableCell>
@@ -193,7 +195,7 @@ export function OrdersHistoryTab() {
 												<TableCell className={accountCellClass}>--</TableCell>
 												<TableCell className={accountCellClass}>{row.status}</TableCell>
 												<TableCell className={accountCellClass}>
-													<WithdrawalLinks row={row} />
+													<TransferLinks row={row} />
 												</TableCell>
 											</TableRow>
 										);
@@ -260,15 +262,15 @@ export function OrdersHistoryTab() {
 					</ScrollArea>
 				)}
 			</div>
-			{isConnected && withdrawalHistory.error && (
+			{isConnected && transferHistory.error && (
 				<div className={accountFooterClass}>
-					<span className="text-fg-muted">Withdrawal history unavailable</span>
+					<span className="text-fg-muted">Deposit and withdrawal history unavailable</span>
 					<Button
 						variant="ghost"
 						intent="neutral"
 						size="xxs"
 						className="max-md:h-8"
-						onClick={() => void withdrawalHistory.refresh()}
+						onClick={() => void transferHistory.refresh()}
 					>
 						Retry
 					</Button>

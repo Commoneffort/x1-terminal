@@ -29,9 +29,10 @@ const state = vi.hoisted(() => ({
 	},
 }));
 vi.mock("@/components/trade/positions/withdrawal-history", () => ({
-	useWithdrawalHistory: () => ({
+	useTransferHistory: () => ({
 		rows: [
 			{
+				kind: "Withdrawal",
 				id: "withdraw-1",
 				time: 1800000001000,
 				asset: "SOL",
@@ -41,12 +42,22 @@ vi.mock("@/components/trade/positions/withdrawal-history", () => ({
 				status: "Completed",
 				trackingUrl: "https://explorer.hyperunit.xyz/addresses/solana-recipient",
 			},
+			{
+				kind: "Deposit",
+				id: "deposit-1",
+				time: 1800000000500,
+				asset: "ETH",
+				amount: "0.1",
+				destination: "0xrecipient",
+				chain: "Ethereum",
+				status: "Completed",
+			},
 		],
 		loading: false,
 		error: false,
 		refresh: vi.fn(),
 	}),
-	WithdrawalLinks: () =>
+	TransferLinks: () =>
 		createElement("a", { href: "https://explorer.hyperunit.xyz/addresses/solana-recipient" }, "Unit ↗"),
 }));
 vi.mock("@lingui/core/macro", () => ({
@@ -131,6 +142,10 @@ it("shows order IDs and filled size and filters order history", async () => {
 	expect(node.querySelectorAll("tbody tr")).toHaveLength(1);
 	expect(node.textContent).toContain("Completed");
 	expect(node.querySelector('a[href*="explorer.hyperunit.xyz"]')).not.toBeNull();
+	await chooseOption(node, "Order history type filter", { value: "Deposit", label: "Deposit" });
+	expect(node.querySelectorAll("tbody tr")).toHaveLength(1);
+	expect(node.querySelector("tbody tr")?.textContent).toContain("Deposit");
+	expect(node.querySelector("tbody tr")?.textContent).toContain("From Ethereum");
 	await act(async () => root.unmount());
 });
 it("shows funding units, payment/rate precision, all-loaded view and side filtering", async () => {

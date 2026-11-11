@@ -628,7 +628,6 @@ html[data-input="pointer"] :focus-visible:not(input, textarea, [contenteditable=
 }
 
 /* Mood Ring */
-}
 :root {
   --mood-bear-rim: oklch(0.36 0.14 355);
   --mood-bear-mid: oklch(0.62 0.2 22);

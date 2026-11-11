@@ -80,6 +80,7 @@ export function TradeFormFields({
 
 	const {
 		isSpotMarket,
+		isReducing,
 		baseToken,
 		capabilities,
 		availableBalance,
@@ -89,11 +90,11 @@ export function TradeFormFields({
 		orderValue,
 		sizeModeLabel,
 		szDecimals,
-	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
+	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput, reduceOnly });
 
 	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
 
-	const isFormDisabled = !isConnected || availableBalance <= 0;
+	const isFormDisabled = !isConnected || (!isReducing && availableBalance <= 0);
 
 	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
@@ -124,7 +125,7 @@ export function TradeFormFields({
 
 	function formatAvailableBalance(): string {
 		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
-		const isBaseToken = isSpotMarket && side === "sell";
+		const isBaseToken = isReducing || (isSpotMarket && side === "sell");
 		const decimals = isBaseToken ? szDecimals : 2;
 		return formatToken(availableBalance, { decimals, symbol: availableBalanceToken ?? undefined });
 	}
@@ -144,8 +145,16 @@ export function TradeFormFields({
 			<InfoRowGroup>
 				<InfoRow
 					label={
-						<Tooltip content={t`Balance available to trade`} side="top" underline>
-							<span>{t`Available`}</span>
+						<Tooltip
+							content={
+								isReducing
+									? t`Current position available to close on this side; no additional opening margin is required.`
+									: t`Balance available to trade`
+							}
+							side="top"
+							underline
+						>
+							<span>{isReducing ? t`Reducible` : t`Available`}</span>
 						</Tooltip>
 					}
 					value={
@@ -158,7 +167,7 @@ export function TradeFormFields({
 									{t`Swap`}
 								</Button>
 							) : null}
-							{isConnected && availableBalance <= 0 ? (
+							{isConnected && !isReducing && availableBalance <= 0 ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onDepositClick}>
 									{t`Deposit`}
 								</Button>
@@ -214,7 +223,7 @@ export function TradeFormFields({
 					placeholder="0.00"
 					value={sizeInput}
 					onChange={(e) => setSize(e.target.value)}
-					maxAllowedDecimals={szDecimals}
+					maxAllowedDecimals={sizeMode === "base" ? szDecimals : undefined}
 					suffix={sizeModeLabel}
 					onSuffixClick={isFormDisabled ? undefined : onSizeModeToggle}
 					suffixAriaLabel={t`Toggle size mode`}
@@ -284,7 +293,7 @@ export function TradeFormFields({
 								aria-label={t`Reduce Only`}
 								checked={triggerOrder || reduceOnly}
 								onCheckedChange={(checked) => setReduceOnly(checked === true)}
-								disabled={isFormDisabled || triggerOrder}
+								disabled={!isConnected || triggerOrder}
 								label={t`Reduce Only`}
 							/>
 						)}

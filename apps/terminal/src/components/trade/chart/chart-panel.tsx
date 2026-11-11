@@ -15,11 +15,11 @@ const KlineChart = createLazyComponent(() => import("./kline-chart"), "KlineChar
 
 type ChartType = "default" | "tradingview";
 
-export function ChartPanel() {
+export function ChartPanel({yAxisInside=false}:{yAxisInside?:boolean} = {}) {
 	useRenderCommitTrack("chart");
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
-	const [chartType, setChartType] = useState<ChartType>("default");
+	const [chartType, setChartType] = useState<ChartType>("tradingview");
 	const chartTheme = theme === "dark" ? "dark" : "light";
 	const { intentHandlers: tradingViewIntentHandlers } = useIntentScriptLoader({
 		src: TRADINGVIEW_SCRIPT_SRC,
@@ -33,6 +33,7 @@ export function ChartPanel() {
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<KlineChart
+       yAxisInside={yAxisInside}
 							symbol={selectedMarket.name}
 							positionDex={getPositionDex(selectedMarket)}
 							theme={chartTheme}

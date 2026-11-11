@@ -1,8 +1,8 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPercent, formatToken } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -66,7 +66,7 @@ function getSideClass(side: "Long" | "Short" | "Flat"): string {
 }
 
 export function FundingTab() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const markets = useMarkets();

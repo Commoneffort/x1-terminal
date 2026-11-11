@@ -1,15 +1,16 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import Big from "big.js";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useTradeHistory } from "@/hooks/use-trade-history";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { getHyperliquidTxUrl } from "@/lib/explorer";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useMarkets } from "@/lib/hyperliquid";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
@@ -20,6 +21,7 @@ import { LoadingRows } from "./loading-rows";
 import { Placeholder } from "./placeholder";
 import {
 	accountCellClass,
+	accountFooterClass,
 	accountHeadClass,
 	accountNumCellClass,
 	accountNumHeadClass,
@@ -33,9 +35,10 @@ import {
 } from "./positions-panel-table-styles";
 import { SortHeadButton } from "./sort-head-button";
 import { ToolbarCheckbox } from "./toolbar-checkbox";
+import { TradePnlShare } from "./trade-pnl-share";
 
 export function HistoryTab() {
-	const { address, isConnected } = useConnection();
+	const { isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const markets = useMarkets();
@@ -44,18 +47,10 @@ export function HistoryTab() {
 	const [sideFilter, setSideFilter] = useState("");
 	const [roleFilter, setRoleFilter] = useState("");
 	const [marketFilter, setMarketFilter] = useState("");
-	const [aggregate, setAggregate] = useState(true);
-	const {
-		data: fillsEvent,
-		status,
-		error,
-	} = useSubscription(
-		"userFills",
-		{ user: address ?? "0x0", aggregateByTime: aggregate },
-		{ enabled: isConnected && !!address },
-	);
-	const allFills = fillsEvent?.fills ?? [];
-	const fills = allFills
+	const [aggregate, setAggregate] = useState(false);
+	const { fills: allFills, status, warning, loading } = useTradeHistory(aggregate);
+	const [visible, setVisible] = useState(MAX_HISTORY_ROWS);
+	const matchingFills = allFills
 		.filter(
 			(fill) =>
 				(!typeFilter || (fill.liquidation ? "Liquidated" : fill.dir) === typeFilter) &&
@@ -64,19 +59,11 @@ export function HistoryTab() {
 				(!marketFilter || fill.coin === marketFilter),
 		)
 		.slice()
-		.sort((a, b) => (descending ? b.time - a.time : a.time - b.time))
-		.slice(0, MAX_HISTORY_ROWS);
+		.sort((a, b) => (descending ? b.time - a.time : a.time - b.time));
+	const fills = matchingFills.slice(0, visible);
 	function renderPlaceholder() {
 		if (!isConnected) return <ConnectPlaceholder message={t`Connect your wallet to view trade history.`} />;
-		if (status === "subscribing" || status === "idle") return <LoadingRows label={t`Loading trade history...`} />;
-		if (status === "error") {
-			return (
-				<Placeholder variant="error">
-					<span>{t`Failed to load trade history.`}</span>
-					{error instanceof Error && <span className="text-fg-muted">{error.message}</span>}
-				</Placeholder>
-			);
-		}
+		if (status === "subscribing") return <LoadingRows label={t`Loading trade history...`} />;
 		if (!fills.length) {
 			return <Placeholder>{allFills.length ? "No trades match these filters." : t`No fills found.`}</Placeholder>;
 		}
@@ -253,6 +240,7 @@ export function HistoryTab() {
 											<TableCell className={cn(numCellClass, getMarketValueClass(pnl))}>
 												<span className="inline-flex items-center gap-1">
 													{formatToken(fill.closedPnl, { decimals: 2, symbol: quote, compact: false })}
+													<TradePnlShare fill={fill} symbol={base} quote={quote} szDecimals={decimals} />
 													{href && pnl !== 0 && (
 														<a
 															href={href}
@@ -271,10 +259,30 @@ export function HistoryTab() {
 								})}
 							</TableBody>
 						</Table>
+						{matchingFills.length > visible && (
+							<div className="flex justify-center px-3 py-2">
+								<Button
+									variant="ghost"
+									intent="neutral"
+									size="xxs"
+									onClick={() => setVisible((value) => value + MAX_HISTORY_ROWS)}
+								>
+									Show more trades
+								</Button>
+							</div>
+						)}
 						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>
+			{isConnected && (
+				<output className={accountFooterClass}>
+					<span className="text-fg-muted">
+						Last 24 hours · {allFills.length} fills{loading ? " · Updating…" : ""}
+					</span>
+					{warning && <span className="text-market-down">{warning}</span>}
+				</output>
+			)}
 		</div>
 	);
 }

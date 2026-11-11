@@ -1,13 +1,15 @@
 import { useEffect, useMemo } from "react";
-import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { buildTradingLines, getTradingLineColor } from "@/lib/chart/trading-lines";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { getOrderLineLabel } from "@/lib/trade/open-orders";
+import { useChartMarksStore } from "@/stores/use-chart-marks-store";
 import type { EntityId, IChartingLibraryWidget } from "@/types/charting_library";
 
 export function useTradingViewLines(widget: IChartingLibraryWidget | null, symbol: string, dex?: string) {
-	const { address, isConnected } = useConnection();
+	const hidden = useChartMarksStore((state) => state.hidden);
+	const { address, isConnected } = useTradingAccount();
 	const { getPosition } = useUserPositions();
 	const position = isConnected ? (getPosition(symbol, dex) ?? getPosition(symbol.split(":").at(-1)!, dex)) : undefined;
 	const { data } = useSubscription(
@@ -30,7 +32,7 @@ export function useTradingViewLines(widget: IChartingLibraryWidget | null, symbo
 		[isConnected, address, symbol, position, data],
 	);
 	useEffect(() => {
-		if (!widget) return;
+		if (!widget || hidden) return;
 		let active = true;
 		const ids: EntityId[] = [];
 		const chart = widget.activeChart();
@@ -74,5 +76,5 @@ export function useTradingViewLines(widget: IChartingLibraryWidget | null, symbo
 				}
 			}
 		};
-	}, [widget, lines]);
+	}, [widget, lines, hidden]);
 }

@@ -23,6 +23,7 @@ import {
 } from "wagmi/chains";
 import { injected, mock } from "wagmi/connectors";
 import { getDemoAddress } from "@/lib/demo/demo-mode";
+import { getRabbyProvider } from "@/lib/wallet/rabby-provider";
 import type { MockWalletConfig } from "@/lib/wallet-utils";
 import { getPhantomProvider, getX1Provider } from "@/lib/x1/provider";
 
@@ -72,6 +73,10 @@ export function createWagmiConfig(
 		chains: BRIDGE_CHAINS,
 		multiInjectedProviderDiscovery: false,
 		connectors: [
+			injected({
+				target: () => ({ id: "rabby", name: "Rabby Wallet", provider: () => getRabbyProvider() }),
+				shimDisconnect: true,
+			}),
 			injected({
 				target: () => ({ id: "phantom", name: "Phantom", provider: () => getPhantomProvider() }),
 				shimDisconnect: true,

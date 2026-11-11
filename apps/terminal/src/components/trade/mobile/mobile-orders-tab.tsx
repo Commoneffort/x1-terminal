@@ -3,13 +3,14 @@ import { t } from "@lingui/core/macro";
 import { XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
+import { canAmendOrderPrice, canAmendRestingOrder } from "@/lib/trade/amend-order";
 import {
 	getOrderTypeConfig,
 	getSideLabel,
@@ -23,6 +24,7 @@ import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
+import { EditOrderModal } from "../positions/edit-order-modal";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -30,9 +32,10 @@ interface Props {
 }
 
 type CancelScope = "row" | "all";
+type EditField = "amount" | "value" | "price";
 
 export function MobileOrdersTab({ className }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { setMobileActiveTab } = useGlobalSettingsActions();
@@ -57,10 +60,12 @@ export function MobileOrdersTab({ className }: Props) {
 
 	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 
+	const [editing, setEditing] = useState<{ oid: number; field: EditField } | null>(null);
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 
 	const openOrders = openOrdersEvent?.orders ?? [];
+	const editingOrder = editing ? openOrders.find((order) => order.oid === editing.oid) : undefined;
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
 		if (ordersToCancel.length === 0) return;
@@ -172,10 +177,19 @@ export function MobileOrdersTab({ className }: Props) {
 							isCancelling={cancellingOids.has(order.oid)}
 							onCancel={handleCancelRow}
 							onSelectMarket={handleSelectMarket}
+							onEdit={(field) => setEditing({ oid: order.oid, field })}
 						/>
 					))}
 				</div>
 			</div>
+			{editing && editingOrder && (
+				<EditOrderModal
+					key={`${address}:${editing.oid}`}
+					order={editingOrder}
+					field={editing.field}
+					onClose={() => setEditing(null)}
+				/>
+			)}
 		</Skeleton>
 	);
 }
@@ -187,9 +201,18 @@ interface MobileOrderCardProps {
 	isCancelling: boolean;
 	onCancel: (orders: OpenOrder[]) => void;
 	onSelectMarket: (marketName: string, side: Side) => void;
+	onEdit: (field: EditField) => void;
 }
 
-function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSelectMarket }: MobileOrderCardProps) {
+function MobileOrderCard({
+	order,
+	szDecimals,
+	kind,
+	isCancelling,
+	onCancel,
+	onSelectMarket,
+	onEdit,
+}: MobileOrderCardProps) {
 	const typeConfig = getOrderTypeConfig(order);
 	const sideLabel = getSideLabel(order.side, kind);
 	const isLong = order.side === "B";
@@ -239,6 +262,42 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 				/>
 				<MetricCell label={t`Trigger`} value={order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER} align="end" />
 			</div>
+
+			{canAmendOrderPrice(order) && (
+				<div className="flex flex-wrap items-center gap-2">
+					{canAmendRestingOrder(order) && (
+						<>
+							<Button
+								variant="secondary"
+								intent="neutral"
+								size="sm"
+								disabled={isCancelling}
+								onClick={() => onEdit("amount")}
+							>
+								{t`Edit amount`}
+							</Button>
+							<Button
+								variant="secondary"
+								intent="neutral"
+								size="sm"
+								disabled={isCancelling}
+								onClick={() => onEdit("value")}
+							>
+								{t`Edit value`}
+							</Button>
+						</>
+					)}
+					<Button
+						variant="secondary"
+						intent="neutral"
+						size="sm"
+						disabled={isCancelling}
+						onClick={() => onEdit("price")}
+					>
+						{t`Edit price`}
+					</Button>
+				</div>
+			)}
 
 			<div className="flex items-center justify-between gap-2">
 				<span className="text-xs text-fg-muted tabular-nums">

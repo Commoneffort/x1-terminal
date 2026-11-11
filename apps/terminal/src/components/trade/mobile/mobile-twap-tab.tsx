@@ -2,10 +2,10 @@ import { Badge, Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Skeleton } from "boneyard-js/react";
 import { useMemo } from "react";
-import { useConnection } from "wagmi";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { getAvgPrice } from "@/domain/market";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function MobileTwapTab({ className }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { data: twapStatesEvent } = useSubscription(

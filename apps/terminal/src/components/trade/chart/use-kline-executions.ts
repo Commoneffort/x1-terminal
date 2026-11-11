@@ -5,6 +5,7 @@ import { buildExecutionMarkers } from "@/lib/chart/execution-markers";
 import { FILL_MARKERS_OVERLAY, registerFillMarkersOverlay } from "@/lib/chart/fill-markers-overlay";
 import { formatPrice, formatToken } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { useChartMarksStore } from "@/stores/use-chart-marks-store";
 import { useExecutionFills } from "./use-execution-fills";
 
 export function useKlineExecutions(
@@ -13,6 +14,7 @@ export function useKlineExecutions(
 	intervalMs: number,
 	dataKey: string | null,
 ) {
+	const hidden = useChartMarksStore((state) => state.hidden);
 	const fills = useExecutionFills();
 	const markets = useMarkets();
 	const szDecimals = markets.getMarket(symbol)?.szDecimals ?? 4;
@@ -22,6 +24,7 @@ export function useKlineExecutions(
 		if (!chart || !dataKey) return;
 		registerFillMarkersOverlay();
 		chart.removeOverlay({ name: FILL_MARKERS_OVERLAY });
+		if (hidden) return;
 		const candles = new Map(chart.getDataList().map((c) => [c.timestamp, c]));
 		const buckets = new Map<string, { time: number; side: "B" | "S"; count: number; size: number; notional: number }>();
 		for (const marker of buildExecutionMarkers(fills, symbol, intervalMs)) {
@@ -56,5 +59,5 @@ export function useKlineExecutions(
 		return () => {
 			chart.removeOverlay({ name: FILL_MARKERS_OVERLAY });
 		};
-	}, [chartRef, fills, symbol, intervalMs, dataKey, szDecimals]);
+	}, [chartRef, fills, symbol, intervalMs, dataKey, szDecimals, hidden]);
 }

@@ -9,13 +9,14 @@ import {
 } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
-import { useConnection, useDisconnect } from "wagmi";
+import { useDisconnect } from "wagmi";
 import { CopyStateIcon } from "@/components/ui/copy-state-icon";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { UI_TEXT } from "@/config/ui-text";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useAccountUnrealizedPnl, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { toNumberOrZero } from "@/lib/trade/numbers";
@@ -30,11 +31,10 @@ interface MobileAccountViewProps {
 }
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const disconnect = useDisconnect();
 
-	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed, isLoading } =
-		useDefaultDexBalances();
+	const { marginSummary, perpSummary, withdrawable, crossMaintenanceMarginUsed, isLoading } = useDefaultDexBalances();
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
@@ -55,10 +55,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
 	const crossLeverage = crossAccountValue > 0 ? Math.abs(crossNtlPos) / crossAccountValue : 0;
 
-	let unrealizedPnl = 0;
-	for (const pos of perpPositions) {
-		unrealizedPnl += toNumberOrZero(pos.position.unrealizedPnl);
-	}
+	const unrealizedPnl = useAccountUnrealizedPnl();
 
 	if (!isConnected) {
 		return (
@@ -129,8 +126,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							<div className="text-base font-medium tabular-nums text-fg">
 								<RollingNumber value={formatUSD(accountValue)} />
 							</div>
-							<div className={cn("text-xs tabular-nums", unrealizedPnl >= 0 ? "text-market-up" : "text-market-down")}>
-								<RollingNumber value={`${unrealizedPnl >= 0 ? "+" : ""}${formatUSD(unrealizedPnl)}`} />{" "}
+							<div
+								className={cn(
+									"text-xs tabular-nums",
+									unrealizedPnl === null ? "text-fg-muted" : unrealizedPnl >= 0 ? "text-market-up" : "text-market-down",
+								)}
+							>
+								<RollingNumber
+									value={`${unrealizedPnl !== null && unrealizedPnl >= 0 ? "+" : ""}${formatUSD(unrealizedPnl)}`}
+								/>{" "}
 								<span className="text-fg-muted">{ACCOUNT_TEXT.UNREALIZED_LABEL}</span>
 							</div>
 						</div>

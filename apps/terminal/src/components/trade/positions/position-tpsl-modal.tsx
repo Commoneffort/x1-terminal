@@ -13,10 +13,12 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { buildPositionTpSlUpdate } from "@/domain/trade/position-tpsl-update";
 import { useSubmitPlan } from "@/hooks/trade/use-submit-plan";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { useExchange } from "@/lib/hyperliquid";
+import { interpretOrderStatuses } from "@/lib/trade/extract-order-status";
 import { isPositive, toNumber } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
 import { AssetDisplay } from "../components/asset-display";
@@ -52,16 +54,14 @@ interface BodyProps {
 }
 
 function PositionTpSlModalBody({ position, onOpenChange }: BodyProps) {
-	const decimals = szDecimalsToPriceDecimals(position.szDecimals);
-	const [tpPriceInput, setTpPriceInput] = useState(
-		position.existingTpPrice ? position.existingTpPrice.toFixed(decimals) : "",
-	);
-	const [slPriceInput, setSlPriceInput] = useState(
-		position.existingSlPrice ? position.existingSlPrice.toFixed(decimals) : "",
-	);
+	const [tpPriceInput, setTpPriceInput] = useState(position.existingTpPrice ? String(position.existingTpPrice) : "");
+	const [slPriceInput, setSlPriceInput] = useState(position.existingSlPrice ? String(position.existingSlPrice) : "");
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
-	const { submitPlan, isSubmitting } = useSubmitPlan();
+	const { submitPlan, isSubmitting: isPlacing } = useSubmitPlan();
+	const { mutateAsync: cancelOrders, isPending: isCancelling } = useExchange("cancel");
+	const [refreshRequired, setRefreshRequired] = useState(false);
+	const isSubmitting = isPlacing || isCancelling;
 
 	const tpPriceNum = toNumber(tpPriceInput);
 	const slPriceNum = toNumber(slPriceInput);
@@ -72,33 +72,47 @@ function PositionTpSlModalBody({ position, onOpenChange }: BodyProps) {
 
 	const hasTp = isPositive(tpPriceNum);
 	const hasSl = isPositive(slPriceNum);
-	const tpValid = !hasTp || validateTpPrice(referencePrice, tpPriceNum, side);
-	const slValid = !hasSl || validateSlPrice(referencePrice, slPriceNum, side);
-	const canSubmit = (hasTp || hasSl) && tpValid && slValid && !isSubmitting;
+	const tpValid = !tpPriceInput.trim() || (hasTp && validateTpPrice(position.markPx, tpPriceNum, side));
+	const slValid = !slPriceInput.trim() || (hasSl && validateSlPrice(position.markPx, slPriceNum, side));
+	const hasExisting = position.existingTpOrderId !== undefined || position.existingSlOrderId !== undefined;
+	const canSubmit = (hasTp || hasSl || hasExisting) && tpValid && slValid && !isSubmitting && !refreshRequired;
 
-	const tpError = hasTp && !tpValid ? (position.isLong ? t`TP must be above entry` : t`TP must be below entry`) : null;
-	const slError = hasSl && !slValid ? (position.isLong ? t`SL must be below entry` : t`SL must be above entry`) : null;
+	const tpError = !tpValid ? (position.isLong ? t`TP must be above mark price` : t`TP must be below mark price`) : null;
+	const slError = !slValid ? (position.isLong ? t`SL must be below mark price` : t`SL must be above mark price`) : null;
 
 	async function handleSubmit() {
 		if (!canSubmit) return;
 
-		const plan = buildOrderPlan({
-			kind: "positionTpsl",
+		const update = buildPositionTpSlUpdate({
 			assetId: position.assetId,
 			isLong: position.isLong,
 			tpPriceNum: hasTp ? tpPriceNum : null,
 			slPriceNum: hasSl ? slPriceNum : null,
+			existingTpOrderId: position.existingTpOrderId,
+			existingSlOrderId: position.existingSlOrderId,
+			existingTpPrice: position.existingTpPrice,
+			existingSlPrice: position.existingSlPrice,
 		});
-
-		if (plan.errors.length > 0) return;
-
 		setSubmitError(null);
-		const result = await submitPlan(plan);
-		if (result.ok) {
+		let cancelled = false;
+		try {
+			if (update.cancels.length) {
+				const result = await cancelOrders({ cancels: update.cancels });
+				const status = interpretOrderStatuses(result.response?.data?.statuses ?? []);
+				if (!status.ok) throw new Error(status.error);
+				cancelled = true;
+			}
+			if (update.orders.length) {
+				const result = await submitPlan({ orders: update.orders, grouping: "positionTpsl" });
+				if (!result.ok) throw new Error(result.error);
+			}
 			onOpenChange(false);
-		} else {
-			const message = result.error || t`Failed to update TP/SL orders`;
-			setSubmitError(message);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "Failed to update TP/SL orders";
+			setRefreshRequired(true);
+			setSubmitError(
+				`${cancelled ? "Previous triggers were cancelled; replacement was not confirmed. " : ""}${message} Close and reopen TP/SL to check current orders before retrying.`,
+			);
 			toast.error(message);
 		}
 	}
@@ -134,6 +148,9 @@ function PositionTpSlModalBody({ position, onOpenChange }: BodyProps) {
 					/>
 				</InfoRowGroup>
 
+				<p className="text-xs text-fg-muted">
+					Applies to the entire position. Clear a field to remove it. Changed triggers are cancelled before replacement.
+				</p>
 				<TpSlSection
 					side={side}
 					referencePrice={referencePrice}

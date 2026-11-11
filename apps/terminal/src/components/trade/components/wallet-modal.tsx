@@ -1,6 +1,7 @@
 import { Button, Modal, ModalContent, ModalPopup } from "@hypeterminal/ui";
 import { useId, useState } from "react";
 import { useConnect, useConnectors } from "wagmi";
+import { RabbyIcon } from "@/components/icons/rabby-icon";
 import { X1Tile } from "../header/x1-terminal-logo";
 
 interface Props {
@@ -18,7 +19,7 @@ export function WalletModal({ open, onOpenChange, embedded = false }: Props) {
 	const [error, setError] = useState<string | null>(null);
 	const [step, setStep] = useState<"choose" | "x1">("choose");
 	const titleId = useId();
-	const wallets = connectors.filter((c) => c.id === "phantom" || c.id === "x1");
+	const wallets = connectors.filter((c) => c.id === "rabby" || c.id === "phantom" || c.id === "x1");
 	const x1 = wallets.find((c) => c.id === "x1");
 
 	function handleOpenChange(next: boolean) {
@@ -70,6 +71,8 @@ export function WalletModal({ open, onOpenChange, embedded = false }: Props) {
 						<span className="shrink-0 group-disabled:opacity-50">
 							{c.id === "x1" ? (
 								<X1Tile size={36} />
+							) : c.id === "rabby" ? (
+								<RabbyIcon className="block size-9 rounded-[9px]" />
 							) : (
 								<img
 									src="/wallets/phantom.svg"
@@ -82,14 +85,20 @@ export function WalletModal({ open, onOpenChange, embedded = false }: Props) {
 						<span className="flex min-w-0 flex-col gap-0.5">
 							<span className="text-sm font-medium text-fg group-disabled:text-fg-disabled">{c.name}</span>
 							<span className="text-xs text-fg-muted group-disabled:text-fg-disabled">
-								{c.id === "x1"
-									? "Derived from your X1 signature · session reconnect"
-									: "Ethereum provider · EIP-712 signing"}
+								{c.id === "rabby"
+									? "Ledger supported · select your Ledger account in Rabby"
+									: c.id === "x1"
+										? "Derived from your X1 signature · session reconnect"
+										: "Ethereum provider · EIP-712 signing"}
 							</span>
 						</span>
 					</button>
 				))}
 			</div>
+			<p className="text-xs text-fg-muted text-pretty">
+				For Ledger: select your hardware account in Rabby, unlock your Ledger and open its Ethereum app. Review and
+				approve signing requests on the device.
+			</p>
 		</>
 	);
 
@@ -160,6 +169,7 @@ function getConnectError(error: unknown, connectorId: string) {
 	if (error instanceof Error && error.name === "ProviderNotFoundError") {
 		if (connectorId === "phantom")
 			return "Phantom not found. Install Phantom, or turn on Ethereum in Phantom settings, then reload.";
+		if (connectorId === "rabby") return "Rabby Wallet not found. Install Rabby, then reload.";
 		return "X1 Wallet not found. Install X1 Wallet, then reload.";
 	}
 	if (error instanceof Error && error.name === "UserRejectedRequestError") return "Request cancelled in your wallet.";

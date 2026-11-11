@@ -1,10 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Suspense, useMemo, useState, useTransition } from "react";
-import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
@@ -29,7 +29,7 @@ export function PositionsPanel() {
 	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [, startTransition] = useTransition();
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useTradingAccount();
 	const { perpSummary, spotBalances } = useDefaultDexBalances();
 	const { positions } = useUserPositions();
 	const { data: ordersEvent } = useSubscription(

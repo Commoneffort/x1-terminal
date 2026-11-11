@@ -33,7 +33,10 @@ const config = defineConfig({
   envDir: "../..",
   server: {
     strictPort: false,
-    proxy: autoTraderProxy,
+    proxy: {
+      ...autoTraderProxy,
+      "/api/builder-users": "http://127.0.0.1:8788",
+    },
   },
   preview: { proxy: autoTraderProxy },
   resolve: {
