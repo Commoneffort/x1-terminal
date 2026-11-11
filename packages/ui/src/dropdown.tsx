@@ -100,6 +100,7 @@ interface DropdownItem {
 	active?: boolean;
 	closeOnClick?: boolean;
 	onSelect?: () => void;
+	detail?: React.ReactNode;
 }
 
 interface DropdownGroup {
@@ -173,6 +174,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					)}
 					{item.label}
 				</span>
+				{item.detail && <span className="ml-4 shrink-0 text-fg-muted tabular-nums">{item.detail}</span>}
 				{item.active && <CheckIcon size={12} weight="bold" className="ml-2 shrink-0 text-fg" />}
 			</Menu.Item>
 		);

@@ -1,7 +1,7 @@
 import { type CSSProperties, useId } from "react";
 import { WORD_HEIGHT, WORD_PATH, WORD_WIDTH } from "@/lib/brand/x1-logo-paths";
 
-function X1Mark({ className, style }: { className?: string; style?: CSSProperties }) {
+export function X1Mark({ className, style }: { className?: string; style?: CSSProperties }) {
 	const gradientId = `x1-one-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 	return (
 		<svg viewBox="0 0 123 80" className={className} aria-hidden="true" style={style}>

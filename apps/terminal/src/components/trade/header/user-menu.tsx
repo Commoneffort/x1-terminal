@@ -15,16 +15,21 @@ import { CopyStateIcon } from "@/components/ui/copy-state-icon";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useTradingAccount } from "@/hooks/use-trading-account";
+import { useXntRewards } from "@/hooks/use-xnt-rewards";
 import { cn } from "@/lib/cn";
 import { exitDemoMode } from "@/lib/demo/demo-mode";
+import { formatToken, formatUSD } from "@/lib/format";
 import { removeAgentFromStorage, useInfo } from "@/lib/hyperliquid";
 import { getNetwork } from "@/lib/network";
+import { feeDecimals, feesToXnt } from "@/lib/rewards/xnt-rewards";
 import { clearX1Session } from "@/lib/x1/provider";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useTradingAccountStore } from "@/stores/use-trading-account-store";
 import { AccountModeControl } from "../components/account-mode-control";
 import { ExportKeyModal } from "../components/export-key-modal";
 import { WalletModal } from "../components/wallet-modal";
+import { XntMark } from "../rewards/xnt-mark";
+import { XntRewardsDrawer } from "../rewards/xnt-rewards-drawer";
 import { X1Tile } from "./x1-terminal-logo";
 
 export function UserMenu() {
@@ -41,6 +46,8 @@ export function UserMenu() {
 	);
 	const [open, setOpen] = useState(false);
 	const [exportOpen, setExportOpen] = useState(false);
+	const [rewardsOpen, setRewardsOpen] = useState(false);
+	const rewards = useXntRewards();
 	const { copied, copy } = useCopyToClipboard();
 
 	if (!isConnected || !address) {
@@ -111,6 +118,12 @@ export function UserMenu() {
 
 	const accountItems = [
 		{
+			label: "XNT rewards",
+			icon: <XntMark size={16} />,
+			detail: rewardsDetail(rewards.data?.total),
+			onSelect: () => setRewardsOpen(true),
+		},
+		{
 			label: `Copy ${activeAddress}`,
 			icon: <CopyStateIcon copied={copied} announcement="Address copied" />,
 			closeOnClick: false,
@@ -180,9 +193,17 @@ export function UserMenu() {
 					},
 				]}
 			/>
+			<XntRewardsDrawer open={rewardsOpen} onOpenChange={setRewardsOpen} />
 			{derived && exportOpen && <ExportKeyModal key={owner} address={owner} onClose={() => setExportOpen(false)} />}
 		</>
 	);
+}
+
+function rewardsDetail(total: string | undefined) {
+	if (total === undefined) return undefined;
+	const xnt = feesToXnt(total);
+	if (xnt) return formatToken(xnt, { decimals: 2, symbol: "XNT" });
+	return formatUSD(total, feeDecimals(total));
 }
 
 function shortAddress(address: string) {
