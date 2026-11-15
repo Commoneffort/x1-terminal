@@ -9,6 +9,8 @@ vi.mock("wagmi",()=>({useConnection:()=>({address:state.owner,isConnected:true,c
 vi.mock("@tanstack/react-query",()=>({useIsMutating:()=>state.mutating}));
 vi.mock("@/stores/use-order-entry-store",()=>({useOrderEntryActions:()=>({resetForm:state.reset})}));
 vi.mock("@/lib/hyperliquid",()=>({removeAgentFromStorage:vi.fn(),useInfo:()=>({data:[{master:state.owner,name:"Ledger bot",subAccountUser:state.sub},{master:state.sub,name:"Other owner",subAccountUser:`0x${"34".repeat(20)}`}],refetch:vi.fn()})}));
+vi.mock("@/hooks/use-xnt-rewards",()=>({useXntRewards:()=>({data:undefined})}));
+vi.mock("@/components/trade/rewards/xnt-rewards-drawer",()=>({XntRewardsDrawer:()=>null}));
 vi.mock("@/components/trade/components/account-mode-control",()=>({AccountModeControl:()=>null}));
 vi.mock("@/components/trade/components/wallet-modal",()=>({WalletModal:()=>null}));
 vi.mock("@/components/trade/components/export-key-modal",()=>({ExportKeyModal:()=>null}));

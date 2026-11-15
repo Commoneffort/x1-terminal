@@ -48,6 +48,7 @@ import {
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
+import { AutoMarketWarning } from "../auto/auto-market-warning";
 import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
@@ -77,11 +78,11 @@ export function TradePanel() {
 	const markPx = toNumberOrZero(market?.markPx);
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
- const reduceOnly = useReduceOnly();
+	const reduceOnly = useReduceOnly();
 
 	const {
 		isSpotMarket,
-  isReducing,
+		isReducing,
 		baseToken,
 		quoteToken,
 		spotBalance,
@@ -175,12 +176,22 @@ export function TradePanel() {
 	const feeRate = isTakerOrderType(orderType) ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
 
-	const { marginRequired: openingMarginRequired, estimatedFee } = getOrderMetrics({ sizeValue, price, leverage, feeRate });
+	const { marginRequired: openingMarginRequired, estimatedFee } = getOrderMetrics({
+		sizeValue,
+		price,
+		leverage,
+		feeRate,
+	});
 	const marginRequired = isReducing ? 0 : openingMarginRequired;
- const { liqPrice: openingLiqPrice, liqWarning: openingLiqWarning } = getLiquidationInfo({ price, sizeValue, leverage, side });
+	const { liqPrice: openingLiqPrice, liqWarning: openingLiqWarning } = getLiquidationInfo({
+		price,
+		sizeValue,
+		leverage,
+		side,
+	});
 
- const liqPrice = isReducing ? null : openingLiqPrice;
- const liqWarning = !isReducing && openingLiqWarning;
+	const liqPrice = isReducing ? null : openingLiqPrice;
+	const liqWarning = !isReducing && openingLiqWarning;
 
 	const needsAgentApproval = !isAgentReady;
 	const isReadyToTrade = isAgentReady;
@@ -211,7 +222,7 @@ export function TradePanel() {
 				})
 			: perpInput(baseInput, {
 					orderType,
-     reduceOnly: isReducing,
+					reduceOnly: isReducing,
 					markPx,
 					maxSize,
 					usesTriggerPrice: usesLimitPriceForOrder(orderType) ? false : isTriggerOrderType(orderType),
@@ -293,7 +304,7 @@ export function TradePanel() {
 	}
 
 	const buttonContent = useButtonContent({
-  reduceOnly: isReducing,
+		reduceOnly: isReducing,
 		isConnected,
 		needsChainSwitch,
 		isSwitchingChain: switchChain.isPending,
@@ -402,6 +413,12 @@ export function TradePanel() {
 					onSizePercentApply={handleSizePercentApply}
 					onDepositClick={() => openDepositModal("deposit")}
 					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
+				/>
+
+				<AutoMarketWarning
+					coin={market?.name}
+					label={market?.shortName ?? market?.name ?? ""}
+					isPerp={!!market && market.kind !== "spot"}
 				/>
 
 				<div className="flex flex-col gap-2">

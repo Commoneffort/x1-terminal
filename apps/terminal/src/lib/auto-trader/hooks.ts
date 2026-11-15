@@ -7,13 +7,14 @@ import { getSignal, getStatus, signedCall } from "./api";
 import type { AutoTraderAction } from "./types";
 import type { Address } from "viem";
 export const ACTIVE_STATUS_POLL_MS=5000;
-export function useAutoTraderStatus(address:Address){return useQuery({
+export function useAutoTraderStatus(address:Address,enabled=true){return useQuery({
  queryKey:["auto-trader","status",address.toLowerCase()],
+ enabled,
  queryFn:({signal})=>getStatus(address,signal),
  refetchInterval:query=>query.state.data?.state==="paused"?30000:ACTIVE_STATUS_POLL_MS,
  staleTime:0,refetchOnMount:"always",refetchOnWindowFocus:"always",refetchOnReconnect:"always",retry:1,
 });}
-export function useAutoTraderSignal(){return useQuery({queryKey:["auto-trader","signal"],queryFn:({signal})=>getSignal(signal),refetchInterval:15000,staleTime:5000,retry:1});}
+export function useAutoTraderSignal(enabled=true){return useQuery({queryKey:["auto-trader","signal"],enabled,queryFn:({signal})=>getSignal(signal),refetchInterval:15000,staleTime:5000,retry:1});}
 export function useAutoTraderMutation(master:Address){
  const {address}=useConnection(),{data:wallet}=useWalletClient(),{env}=useHyperliquid();
  const {address:target}=useTradingAccount();

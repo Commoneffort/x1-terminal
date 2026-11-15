@@ -14,6 +14,7 @@ import {
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import { AutoModePill } from "./auto/auto-mode-pill";
 import { StatBlock } from "./chart/stat-block";
 import { MoodSlot } from "./mood/mood-slot";
 
@@ -167,6 +168,7 @@ export function MarketOverview() {
 					}
 				/>
 			)}
+			<AutoModePill />
 			<MoodSlot />
 		</div>
 	);
