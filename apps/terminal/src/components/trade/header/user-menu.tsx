@@ -4,7 +4,6 @@ import {
 	CodeIcon,
 	EyeIcon,
 	KeyIcon,
-	RobotIcon,
 	SignOutIcon,
 	SlidersHorizontalIcon,
 } from "@phosphor-icons/react";
@@ -24,9 +23,7 @@ import { removeAgentFromStorage, useInfo } from "@/lib/hyperliquid";
 import { getNetwork } from "@/lib/network";
 import { feeDecimals, feesToXnt } from "@/lib/rewards/xnt-rewards";
 import { clearX1Session } from "@/lib/x1/provider";
-import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { setTradeMode } from "@/stores/use-trade-mode-store";
 import { useTradingAccountStore } from "@/stores/use-trading-account-store";
 import { AccountModeControl } from "../components/account-mode-control";
 import { ExportKeyModal } from "../components/export-key-modal";
@@ -42,7 +39,6 @@ export function UserMenu() {
 	const mutating = useIsMutating() > 0;
 	const select = useTradingAccountStore((s) => s.select);
 	const { resetForm } = useOrderEntryActions();
-	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const subaccounts = useInfo(
 		"subAccounts",
 		{ user: address ?? zeroAddress },
@@ -131,14 +127,6 @@ export function UserMenu() {
 			icon: <XntMark size={16} />,
 			detail: rewardsDetail(rewards.data?.total),
 			onSelect: () => setRewardsOpen(true),
-		},
-		{
-			label: "Auto Trader",
-			icon: <RobotIcon className="size-4" />,
-			onSelect: () => {
-				setTradeMode("auto");
-				setMobileActiveTab("trade");
-			},
 		},
 		{
 			label: "API wallets",
