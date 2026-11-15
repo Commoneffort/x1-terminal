@@ -217,9 +217,8 @@ function MarketTab({ coin, name, score }: { coin: MoodCoin | undefined; name: st
 					aside={
 						<span className="tabular-nums">
 							<span className="text-market-up">{coin.tradersLong} long</span>
-							<span className="text-fg-muted"> · </span>
-							<span className="text-market-down">{coin.tradersShort} short</span>
-							<span className="text-fg-muted"> · {MOOD_POOL_SIZE - holders} flat</span>
+							<span className="ml-2 text-market-down">{coin.tradersShort} short</span>
+							<span className="ml-2 text-fg-muted">{MOOD_POOL_SIZE - holders} flat</span>
 						</span>
 					}
 				>
@@ -230,7 +229,7 @@ function MarketTab({ coin, name, score }: { coin: MoodCoin | undefined; name: st
 					<div className="mt-3 flex items-center justify-between text-2xs text-fg-muted">
 						<span>Largest trader</span>
 						<span className="tabular-nums">
-							<span className="text-fg-secondary">{shortAddress(coin.dominant.usr)}</span> ·{" "}
+							<span className="text-fg-secondary">{shortAddress(coin.dominant.usr)}</span>,{" "}
 							{Math.round(coin.dominant.share * 100)}% of exposure
 						</span>
 					</div>
@@ -285,7 +284,7 @@ function ScoreBreakdown({ children }: { children: React.ReactNode }) {
 			>
 				<span className="flex-1 font-medium">How the score is built</span>
 				<span className="text-2xs text-fg-muted transition-colors group-hover:text-fg-secondary">
-					Positions 60% · Flow 40%
+					Positions 60%, flow 40%
 				</span>
 				<CaretDownIcon
 					className={cn(
@@ -368,10 +367,10 @@ function NotionalSplit({ long, short }: { long: number; short: number }) {
 			</div>
 			<div className="mt-1.5 flex justify-between text-2xs tabular-nums">
 				<span className="text-fg-muted">
-					<span className="text-market-up">{compactUsd(long)}</span> long · {Math.round(pl)}%
+					<span className="text-market-up">{compactUsd(long)}</span> long ({Math.round(pl)}%)
 				</span>
 				<span className="text-fg-muted">
-					{Math.round(100 - pl)}% · <span className="text-market-down">{compactUsd(short)}</span> short
+					<span className="text-market-down">{compactUsd(short)}</span> short ({Math.round(100 - pl)}%)
 				</span>
 			</div>
 		</div>

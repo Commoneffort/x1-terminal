@@ -24,7 +24,7 @@ export function PositionPnlShare({ position, markPx, symbol, szDecimals }: {
    onClick={() => { setError(null); setOpen(true); }}><ArrowSquareOutIcon className="size-3.5" /></button>
   <Modal open={open} onOpenChange={setOpen}>
    <ModalPopup size="lg" className="!max-w-3xl">
-    <ModalHeader><ModalTitle>{symbol} · Position PNL</ModalTitle></ModalHeader>
+    <ModalHeader><ModalTitle>{symbol} position PNL</ModalTitle></ModalHeader>
     <ModalContent className="space-y-3">
      {open && <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} alt={`${symbol} position gain or loss, leverage, entry price and mark price`} className="w-full rounded-lg" />}
      <p className="text-xs text-fg-muted">Shows unrealized PNL and return on equity (ROE). Values update while this view is open. Downloading saves the current snapshot.</p>

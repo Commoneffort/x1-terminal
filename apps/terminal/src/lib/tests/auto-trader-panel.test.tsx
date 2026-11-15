@@ -77,7 +77,7 @@ it("pauses before submitting immediate close orders and never queues a scheduled
 it("uses selected subaccount for readiness, status and registration while approvals use the signing owner",async()=>{
  const sub=`0x${"12".repeat(20)}` as const;useTradingAccountStore.getState().select({owner:state.owner as `0x${string}`,address:sub,name:"Ledger strategy",network:getNetwork()});
  const node=document.createElement("div"),root=createRoot(node);await act(async()=>root.render(createElement(AutoTraderPanel)));
- expect(node.textContent).toContain(`Signing owner: ${state.owner}`);expect(node.textContent).toContain(`Trading account: Ledger strategy · ${sub}`);expect(state.statusTarget).toHaveBeenCalledWith(sub);
+ expect(node.textContent).toContain(`Signing owner: ${state.owner}`);expect(node.textContent).toContain(`Trading account: Ledger strategy, ${sub}`);expect(state.statusTarget).toHaveBeenCalledWith(sub);
  expect(state.infoRead).toHaveBeenCalledWith("clearinghouseState",{user:sub});expect(state.infoRead).toHaveBeenCalledWith("extraAgents",{user:state.owner});
  await act(async()=>button(node,"Create Auto Trader API wallet").click());await act(async()=>button(node,"Register Auto Trader").click());expect(state.sealed?.master).toBe(sub);expect(state.sealed?.master).not.toBe(state.owner);
  await act(async()=>root.unmount());

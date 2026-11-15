@@ -40,7 +40,7 @@ export function AutoExistingWallet({ setup, onCancel }: Props) {
 							<span className="flex min-w-0 flex-1 flex-col">
 								<span className="truncate text-xs font-medium">{walletName(row.name)}</span>
 								<span className="text-2xs text-fg-muted tabular-nums">
-									{row.address.slice(0, 6)}…{row.address.slice(-4)} · expires{" "}
+									{row.address.slice(0, 6)}…{row.address.slice(-4)}, expires{" "}
 									{new Date(row.validUntil).toLocaleDateString([], { month: "short", day: "numeric" })}
 								</span>
 							</span>

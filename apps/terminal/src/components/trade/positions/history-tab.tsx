@@ -278,7 +278,7 @@ export function HistoryTab() {
 			{isConnected && (
 				<output className={accountFooterClass}>
 					<span className="text-fg-muted">
-						Last 24 hours · {allFills.length} fills{loading ? " · Updating…" : ""}
+						{allFills.length} fills in the last 24 hours{loading ? <span className="ml-2">Updating…</span> : null}
 					</span>
 					{warning && <span className="text-market-down">{warning}</span>}
 				</output>

@@ -451,7 +451,7 @@ export function buildPnlCardSvg(data: PnlCardData): string {
 	parts.push(
 		`<text x="${inkX(left, data.symbol, symbolSize, 600)}" y="214" font-size="${symbolSize}" font-weight="600" fill="${FG}">${xml(data.symbol)}</text>`,
 	);
-	const dexSuffix = data.dex ? ` · ${data.dex.slice(0, 20).toUpperCase()}` : "";
+	const dexSuffix = data.dex ? `  ${data.dex.slice(0, 20).toUpperCase()}` : "";
 	const sideLine = trade
 		? `${trade.direction.toUpperCase()}${dexSuffix}`
 		: `${data.side} ${formatLeverage(data.leverage).toUpperCase()}${dexSuffix}`;
@@ -463,7 +463,7 @@ export function buildPnlCardSvg(data: PnlCardData): string {
 		`<text x="${inkX(left, hero, heroSize, 600)}" y="430" font-size="${heroSize}" font-weight="600" letter-spacing="${-0.03 * heroSize}" fill="${accent}">${xml(hero)}</text>`,
 	);
 	if (trade) {
-		parts.push(microLabel(left, 500, `Realized PNL · ${trade.quote}`, MUTED));
+		parts.push(microLabel(left, 500, `Realized PNL (${trade.quote})`, MUTED));
 	} else {
 		const pnlLabelWidth = textWidth("UNREALIZED PNL", 16, 500, 0.06);
 		parts.push(microLabel(left, 500, "Unrealized PNL", MUTED));
@@ -492,7 +492,7 @@ export function buildPnlCardSvg(data: PnlCardData): string {
 	}
 	parts.push(`<rect x="${left}" y="672" width="${right - left}" height="1" fill="${HAIRLINE}"/>`);
 	parts.push(
-		`<text x="${inkX(left, data.timestamp, 15, 500)}" y="714" font-size="15" fill="${FAINT}">${xml(trade ? `${data.timestamp} · Hyperliquid` : `${data.timestamp} · Hyperliquid · Unrealized PNL may change`)}</text>`,
+		`<text x="${inkX(left, data.timestamp, 15, 500)}" y="714" font-size="15" fill="${FAINT}">${xml(trade ? `${data.timestamp} on Hyperliquid` : `${data.timestamp} on Hyperliquid. Unrealized PNL may change.`)}</text>`,
 	);
 	parts.push(
 		`<text x="${right}" y="714" font-size="15" font-weight="500" fill="${MUTED}" text-anchor="end">terminal.x1.xyz</text>`,

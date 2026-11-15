@@ -136,7 +136,7 @@ export function AutoTraderTab() {
 				score: r.weight === undefined ? null : Math.round(r.weight * 100),
 				current: r.curNtl,
 				target: r.tgtNtl,
-				action: r.acts.length ? r.acts.map((a) => a.charAt(0) + a.slice(1).toLowerCase()).join(" · ") : "Hold",
+				action: r.acts.length ? r.acts.map((a) => a.charAt(0) + a.slice(1).toLowerCase()).join(", ") : "Hold",
 			}));
 
 	return (
@@ -182,7 +182,7 @@ export function AutoTraderTab() {
 							{status?.validUntil && (
 								<span className="text-fg-muted">
 									{" "}
-									· expires {new Date(status.validUntil).toLocaleDateString([], { month: "short", day: "numeric" })}
+									, expires {new Date(status.validUntil).toLocaleDateString([], { month: "short", day: "numeric" })}
 								</span>
 							)}
 						</Stat>
@@ -282,7 +282,7 @@ export function AutoTraderTab() {
 											<TableCell className={accountCellClass}>{o.coin}</TableCell>
 											<TableCell className={accountCellClass}>
 												{o.tag}
-												{o.reduceOnly ? " · reduce only" : ""}
+												{o.reduceOnly ? ", reduce only" : ""}
 											</TableCell>
 											<TableCell className={cn(accountCellClass, o.isBuy ? "text-market-up" : "text-market-down")}>
 												{o.isBuy ? "Buy" : "Sell"}

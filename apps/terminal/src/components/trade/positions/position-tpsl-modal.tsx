@@ -127,7 +127,7 @@ function PositionTpSlModalBody({ position, onOpenChange }: BodyProps) {
 						hideIcon
 						nameClassName={cn("font-medium", position.isLong ? "text-market-up" : "text-market-down")}
 					/>
-					<span>· {position.isLong ? t`Long position` : t`Short position`}</span>
+					<span>{position.isLong ? t`long position` : t`short position`}</span>
 				</ModalDescription>
 			</ModalHeader>
 

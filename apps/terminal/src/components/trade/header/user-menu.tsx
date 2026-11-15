@@ -99,13 +99,13 @@ export function UserMenu() {
 	const accountRows = rows.length
 		? [
 				{
-					label: `Main account · ${shortAddress(owner)}`,
+					label: `Main account (${shortAddress(owner)})`,
 					active: !active.isSubaccount,
 					disabled: mutating,
 					onSelect: () => choose(null),
 				},
 				...rows.map((row) => ({
-					label: `${row.name} · ${shortAddress(row.subAccountUser)}`,
+					label: `${row.name} (${shortAddress(row.subAccountUser)})`,
 					active: activeAddress.toLowerCase() === row.subAccountUser.toLowerCase(),
 					disabled: subaccounts.isError || mutating,
 					onSelect: () => choose(row),
@@ -261,7 +261,7 @@ function WalletLabel({ connector, demo, name }: WalletLabelProps) {
 }
 
 function getAccountLabel(derived: boolean, demo: boolean, walletName: string) {
-	if (demo) return "Demo account · read-only";
-	if (derived) return "X1 Wallet · derived key";
+	if (demo) return "Read-only demo account";
+	if (derived) return "X1 Wallet derived key";
 	return walletName;
 }

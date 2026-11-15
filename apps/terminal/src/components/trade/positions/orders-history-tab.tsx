@@ -182,7 +182,7 @@ export function OrdersHistoryTab() {
 													<span title={row.destination || undefined}>
 														{row.kind === "Deposit" ? "From" : "To"} {row.chain}
 														{row.kind !== "Deposit" && row.destination
-															? ` · ${row.destination.slice(0, 6)}…${row.destination.slice(-4)}`
+															? ` (${row.destination.slice(0, 6)}…${row.destination.slice(-4)})`
 															: ""}
 													</span>
 												</TableCell>

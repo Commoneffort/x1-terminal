@@ -73,7 +73,7 @@ export function AutoSettingsForm({ saved, saving, disabled, onSave }: Props) {
 				<div className="flex items-center justify-between text-xs">
 					<span className="text-fg-muted">Signal blend</span>
 					<span className="tabular-nums">
-						Positions {100 - flow}% · 6h flow {flow}%
+						Positions {100 - flow}%, 6h flow {flow}%
 					</span>
 				</div>
 				<Slider

@@ -107,9 +107,8 @@ export function TradeHeader({
 						aria-label={t`Margin mode and leverage`}
 						className="my-auto ml-auto flex h-7 shrink-0 items-center gap-1.5 rounded-8 px-2 text-xs text-fg-secondary tabular-nums transition-colors hover:bg-control hover:text-fg"
 					>
-						{marginLabel}
-						<span className="text-fg-muted">·</span>
-						{leverage ?? 1}x
+						<span>{marginLabel}</span>
+						<span className="text-fg">{leverage ?? 1}x</span>
 						<CaretDownIcon weight="bold" className="size-3 text-fg-muted" />
 					</button>
 				)}

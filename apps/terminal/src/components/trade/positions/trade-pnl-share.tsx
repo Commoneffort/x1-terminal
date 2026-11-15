@@ -10,7 +10,7 @@ export function TradePnlShare({ fill, symbol, quote, szDecimals }: { fill: Trade
  const svg=open?buildPnlCardSvg({symbol,dex:fill.coin.includes(":")?fill.coin.split(":")[0]:undefined,side:"LONG",leverage:NaN,roe:NaN,pnl:Number(fill.closedPnl),entryPrice:formatPrice(fill.px,{szDecimals}),markPrice:"",timestamp:new Date(fill.time).toISOString().replace("T"," ").slice(0,19)+" UTC",trade:{direction:fill.dir,quote,size:formatToken(fill.sz,{decimals:szDecimals,symbol,compact:false}),fee:formatToken(fill.fee,{decimals:8,symbol:fill.feeToken,compact:false})}}):"";
  return <>
   <button type="button" aria-label={`View ${symbol} trade PNL card`} title="View and download trade PNL" className="inline-flex shrink-0 items-center justify-center rounded p-0.5 text-brand hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-stroke-focus" onClick={()=>{setError(null);setOpen(true);}}><ImageIcon className="size-3.5" /></button>
-  <Modal open={open} onOpenChange={setOpen}><ModalPopup size="lg" className="!max-w-3xl"><ModalHeader><ModalTitle>{symbol} · Trade PNL</ModalTitle></ModalHeader><ModalContent className="space-y-3">
+  <Modal open={open} onOpenChange={setOpen}><ModalPopup size="lg" className="!max-w-3xl"><ModalHeader><ModalTitle>{symbol} trade PNL</ModalTitle></ModalHeader><ModalContent className="space-y-3">
    {open && <img src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} alt={`${symbol} realized trade PNL, fill price and size`} className="w-full rounded-lg" />}
    <p className="text-xs text-fg-muted">Realized PNL for this fill, before fees.</p>
    {error && <p role="alert" className="text-xs text-error">{error}</p>}

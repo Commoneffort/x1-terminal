@@ -5,7 +5,7 @@ const order = { oid: 1, coin: "BTC", side: "B" as const, isTrigger: false, trigg
 it("includes entry, liquidation, limits and TP/SL trigger prices", () => {
  const lines = buildTradingLines("BTC", position, [order, { ...order, oid: 2, isTrigger: true, triggerPx: "120", label: "TP" }, { ...order, oid: 3, isTrigger: true, triggerPx: "80", label: "SL" }]);
  expect(lines.map(l => l.price)).toEqual([100, 75, 90, 120, 80]);
- expect(lines[0].label).toContain("Long · 2 · PNL 12.34");
+ expect(lines[0].label).toContain("Long 2 PNL 12.34");
  expect(lines[1].label).toBe("Liquidation");
 });
 it("omits missing liquidation prices, flat positions, invalid prices and other markets", () => {

@@ -175,7 +175,7 @@ export function MobilePositionCard({
 				<MetricCell label={t`Entry`} value={formatPrice(entryPx, { szDecimals })} />
 				<MetricCell label={t`Mark`} value={formatPrice(valuationMark, { szDecimals })} align="end" />
 				<MetricCell
-					label={p.leverage.type === "isolated" ? t`Margin · Iso` : t`Margin`}
+					label={p.leverage.type === "isolated" ? t`Isolated margin` : t`Margin`}
 					value={formatUSD(p.marginUsed)}
 				/>
 				<MetricCell

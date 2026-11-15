@@ -15,8 +15,8 @@ it.each([
  ["HOLD (neutral)",-3275.59,-3275.59,"Hold short (neutral)"],
  ["HOLD_NEUTRAL",2699.95,2699.95,"Hold long (neutral)"],
  ["HOLD_NEUTRAL",0,0,"Stay flat (neutral)"],
- ["skip ADD $120.22",-5954.54,-6074.51,"Skip increase short (sell) · $120.22"],
- ["skip REDUCE $105.85",-8812.58,-8706.8,"Skip reduce short (buy) · $105.85"],
+ ["skip ADD $120.22",-5954.54,-6074.51,"Skip increase short (sell), $120.22"],
+ ["skip REDUCE $105.85",-8812.58,-8706.8,"Skip reduce short (buy), $105.85"],
  ["BUY",-1000,-500,"Buy"],
  ["SELL",-1000,-1500,"Sell"],
  ["CAPPED",-1000,-1000,"CAPPED"],
@@ -27,7 +27,7 @@ it.each([
 it("clarifies reason tags and preserves executor amounts, cap/minimum explanations and raw data",()=>{
  const input=row("skip REDUCE $22.34",-11964.78,-11942.82,"Per-coin weight cap: |weight×k| limited to 1; skip REDUCE $22.34: below minOrderUsd 150 (adjustment $22.34)");
  const original=structuredClone(input);
- expect(executorReasonLabel(input)).toBe("Per-coin weight cap: |weight×k| limited to 1; Skip reduce short (buy) · $22.34: below minOrderUsd 150 (adjustment $22.34)");
+ expect(executorReasonLabel(input)).toBe("Per-coin weight cap: |weight×k| limited to 1; Skip reduce short (buy), $22.34: below minOrderUsd 150 (adjustment $22.34)");
  expect(executorReasonLabel(row("ADD",-4097.11,-4252.16,"ADD: signed adjustment -$155.05"))).toBe("Increase short (sell): exposure change -$155.05");
  expect(input).toEqual(original);
 });

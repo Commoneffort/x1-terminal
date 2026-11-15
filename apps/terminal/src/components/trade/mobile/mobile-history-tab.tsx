@@ -57,8 +57,8 @@ export function MobileHistoryTab({ className }: Props) {
 				</div>
 				<output className="block shrink-0 px-3 pb-2 text-2xs text-fg-muted">
 					{t`Last 24 hours`}
-					{loading ? ` · ${t`Updating…`}` : ""}
-					{warning && <span className="text-error"> · {warning}</span>}
+					{loading ? <span className="ml-2">{t`Updating…`}</span> : null}
+					{warning && <span className="ml-2 text-error">{warning}</span>}
 				</output>
 				<div className="flex-1 min-h-0 overflow-y-auto divide-y divide-stroke-faint border-t border-stroke-faint">
 					{fills.map((fill) => {

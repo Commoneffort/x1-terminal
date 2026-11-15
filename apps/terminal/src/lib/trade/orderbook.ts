@@ -120,10 +120,10 @@ function formatTickSize(tickSize: number, decimals: number): string {
 export type OrderbookDepth = 5 | 10 | 15 | 20;
 
 export const ORDERBOOK_DEPTH_OPTIONS: { value: OrderbookDepth; label: string }[] = [
-	{ value: 5, label: "Fast · 5" },
-	{ value: 10, label: "Depth · 10" },
-	{ value: 15, label: "Depth · 15" },
-	{ value: 20, label: "Depth · 20" },
+	{ value: 5, label: "5 levels" },
+	{ value: 10, label: "10 levels" },
+	{ value: 15, label: "15 levels" },
+	{ value: 20, label: "20 levels" },
 ];
 
 export function getDefaultBookPriceDecimals(markPx: number | undefined, szDecimals: number): number {

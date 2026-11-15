@@ -251,7 +251,7 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 						{address ? (
 							<>
 								<span className="font-mono">{shortenAddress(address)}</span>
-								<span className="text-fg-muted"> · {env}</span>
+								<span className="text-fg-muted"> ({env})</span>
 							</>
 						) : (
 							<Trans>Wallet not connected</Trans>

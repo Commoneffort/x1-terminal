@@ -403,7 +403,7 @@ export function NativeWithdrawForm({
 								<output className="block text-fg-secondary">Swap submitted. Check your updated balance.</output>
 							)}
 							<InfoRowGroup className="border-t border-stroke-weak pt-3">
-								{fees.data && <InfoRow label={`Fee · est. ${fees.data.eta}`} value={`${fees.data.fee} ${asset}`} />}
+								{fees.data && <InfoRow label={`Fee (est. ${fees.data.eta})`} value={`${fees.data.fee} ${asset}`} />}
 								{gasCheck.data && Number(gasCheck.data.fee) > 0 && (
 									<InfoRow
 										label={

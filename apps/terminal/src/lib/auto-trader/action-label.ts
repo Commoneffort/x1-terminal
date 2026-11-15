@@ -15,7 +15,7 @@ function leg(tag:string,row:Row){
 function neutral(row:Row){return row.currentUsd<0?"Hold short (neutral)":row.currentUsd>0?"Hold long (neutral)":"Stay flat (neutral)";}
 function translate(text:string,row:Row){
  return text.replace(/\bHOLD_NEUTRAL\b|HOLD \(neutral\)/gi,()=>neutral(row))
-  .replace(/\bskip\s+(FLIP-CLOSE|FLIP-OPEN|REDUCE|CLOSE|OPEN|ADD|BUY|SELL)(\s+\$[\d,.]+)?/gi,(_match,tag:string,amount:string|undefined)=>`Skip ${leg(tag,row).toLowerCase()}${amount?` · ${amount.trim()}`:""}`)
+  .replace(/\bskip\s+(FLIP-CLOSE|FLIP-OPEN|REDUCE|CLOSE|OPEN|ADD|BUY|SELL)(\s+\$[\d,.]+)?/gi,(_match,tag:string,amount:string|undefined)=>`Skip ${leg(tag,row).toLowerCase()}${amount?`, ${amount.trim()}`:""}`)
   .replace(/\b(FLIP-CLOSE|FLIP-OPEN|REDUCE|CLOSE|OPEN|ADD|BUY|SELL)\b/g,tag=>leg(tag,row));
 }
 export function executorActionLabel(row:Row){return row.action?translate(row.action,row):"—";}

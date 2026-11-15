@@ -65,7 +65,7 @@ it("renders 5, 10, 15, and 20 rows per side rather than silently capping to the 
 	const menu = node.querySelector('[data-dropdown="Order book depth per side"]');
 	if (!menu) throw new Error("depth menu not found");
 	for (const depth of [5, 10, 15, 20, 5]) {
-		const label = depth === 5 ? "Fast · 5" : `Depth · ${depth}`;
+		const label = `${depth} levels`;
 		const item = Array.from(menu.querySelectorAll("button")).find((button) => button.textContent === label);
 		if (!item) throw new Error(`depth option ${label} not found`);
 		await act(async () => {

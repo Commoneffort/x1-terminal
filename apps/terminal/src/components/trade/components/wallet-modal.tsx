@@ -86,10 +86,10 @@ export function WalletModal({ open, onOpenChange, embedded = false }: Props) {
 							<span className="text-sm font-medium text-fg group-disabled:text-fg-disabled">{c.name}</span>
 							<span className="text-xs text-fg-muted group-disabled:text-fg-disabled">
 								{c.id === "rabby"
-									? "Ledger supported · select your Ledger account in Rabby"
+									? "Ledger supported. Select your Ledger account in Rabby."
 									: c.id === "x1"
-										? "Derived from your X1 signature · session reconnect"
-										: "Ethereum provider · EIP-712 signing"}
+										? "Derived from your X1 signature. Reconnects each session."
+										: "Ethereum provider with EIP-712 signing"}
 							</span>
 						</span>
 					</button>

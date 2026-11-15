@@ -3,8 +3,12 @@ import { colorToHex, getChartColors } from "./theme-colors";
 export type TradingLineTone = "up" | "down" | "warning";
 export interface TradingLine {
 	id: string;
+	kind: "position" | "liquidation" | "order";
 	price: number;
 	label: string;
+	title: string;
+	qty?: string;
+	pnl?: number;
 	tone: TradingLineTone;
 }
 interface Position {
@@ -36,13 +40,27 @@ export function buildTradingLines(
 		if (valid(entry))
 			lines.push({
 				id: "position",
+				kind: "position",
+				title: long ? "Long" : "Short",
+				qty: String(Math.abs(Number(position.szi))),
+				pnl:
+					position.unrealizedPnl != null && Number.isFinite(Number(position.unrealizedPnl))
+						? Number(position.unrealizedPnl)
+						: undefined,
 				price: entry,
-				label: `${long ? "Long" : "Short"} · ${Math.abs(Number(position.szi))}${position.unrealizedPnl != null && Number.isFinite(Number(position.unrealizedPnl)) ? ` · PNL ${Number(position.unrealizedPnl).toFixed(2)}` : ""}`,
+				label: `${long ? "Long" : "Short"} ${Math.abs(Number(position.szi))}${position.unrealizedPnl != null && Number.isFinite(Number(position.unrealizedPnl)) ? ` PNL ${Number(position.unrealizedPnl).toFixed(2)}` : ""}`,
 				tone: long ? "up" : "down",
 			});
 		const liquidation = Number(position.liquidationPx);
 		if (valid(liquidation))
-			lines.push({ id: "liquidation", price: liquidation, label: "Liquidation", tone: "warning" });
+			lines.push({
+				id: "liquidation",
+				kind: "liquidation",
+				title: "Liq.",
+				price: liquidation,
+				label: "Liquidation",
+				tone: "warning",
+			});
 	}
 	for (const order of orders) {
 		if (order.coin !== symbol) continue;
@@ -50,8 +68,11 @@ export function buildTradingLines(
 		if (valid(price))
 			lines.push({
 				id: `order:${order.oid}`,
+				kind: "order",
+				title: order.label,
+				qty: order.sz,
 				price,
-				label: `${order.label} · ${order.sz}`,
+				label: `${order.label} ${order.sz}`,
 				tone: order.side === "B" ? "up" : "down",
 			});
 	}

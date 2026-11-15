@@ -81,7 +81,7 @@ export function X1Setup() {
 			>
 				<ModalPopup size="sm">
 					<ModalHeader>
-						<ModalTitle>Approve trading · {testnet ? "Testnet" : "Mainnet"}</ModalTitle>
+						<ModalTitle>Approve trading on {testnet ? "Testnet" : "Mainnet"}</ModalTitle>
 						<ModalDescription>Approve in your wallet to enable trading.</ModalDescription>
 					</ModalHeader>
 					<ModalContent className="flex flex-col gap-4">
