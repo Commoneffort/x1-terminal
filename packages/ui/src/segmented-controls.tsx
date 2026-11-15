@@ -100,10 +100,26 @@ const SegmentedControls = React.forwardRef<HTMLDivElement, SegmentedControlsProp
 		ref,
 	) => {
 		const size = (sizeProp ?? DEFAULT_SIZE) as SegmentedControlSize;
+		const [prevValue, setPrevValue] = React.useState(value);
+		const [moving, setMoving] = React.useState(false);
+		if (value !== prevValue) {
+			setPrevValue(value);
+			setMoving(true);
+		}
+		React.useEffect(() => {
+			if (!moving) return;
+			const timer = setTimeout(() => setMoving(false), 250);
+			return () => clearTimeout(timer);
+		}, [moving]);
+
+		function handleValueChange(next: string) {
+			setMoving(true);
+			onValueChange?.(next);
+		}
 
 		return (
 			<SegmentedControlsContext.Provider value={{ size, fullWidth: !!fullWidth, disabled, tone }}>
-				<Tabs.Root value={value} defaultValue={defaultValue} onValueChange={onValueChange}>
+				<Tabs.Root value={value} defaultValue={defaultValue} onValueChange={handleValueChange}>
 					<Tabs.List
 						ref={ref}
 						className={cn("relative overflow-hidden", segmentedControlsVariants({ fullWidth, className }))}
@@ -111,7 +127,8 @@ const SegmentedControls = React.forwardRef<HTMLDivElement, SegmentedControlsProp
 					>
 						<Tabs.Indicator
 							className={cn(
-								"absolute inset-y-0.5 rounded-6 transition-[left,width,background-color] duration-200 ease-in-out motion-reduce:transition-none",
+								"absolute inset-y-0.5 rounded-6 transition-[background-color] duration-200 ease-in-out motion-reduce:transition-none",
+								moving && "transition-[left,width,background-color]",
 								indicatorToneClasses[tone],
 								indicatorClassName,
 							)}
