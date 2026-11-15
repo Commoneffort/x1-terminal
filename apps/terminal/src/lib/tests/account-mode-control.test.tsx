@@ -20,6 +20,8 @@ it("shows Unified and requires an explicit action before switching to Manual",as
  expect(node.textContent).toContain("Mode: Unified");expect(state.send).not.toHaveBeenCalled();
  await act(async()=>node.querySelector<HTMLButtonElement>('button[aria-label="Account mode: Unified"]')!.click());
  expect(node.textContent).toContain("Separate spot and perps balances");expect(state.send).not.toHaveBeenCalled();
+ expect([...node.querySelectorAll("button")].find(b=>b.textContent==="Unified mode active")?.disabled).toBe(true);
+ await act(async()=>node.querySelector<HTMLInputElement>('input[value="disabled"]')!.click());
  await act(async()=>[...node.querySelectorAll("button")].find(b=>b.textContent==="Switch to Manual")!.click());
  expect(state.send).toHaveBeenCalledExactlyOnceWith({user:state.address,abstraction:"disabled"});
  expect(node.textContent).toContain("Mode: Manual");expect(state.toastSuccess).toHaveBeenCalledWith("Manual mode is active.");
@@ -31,6 +33,7 @@ it("supports Manual to Unified and reports a rejected signature without changing
  await act(async()=>root.render(createElement(AccountModeControl)));
  expect(node.textContent).toContain("Mode: Manual");
  await act(async()=>node.querySelector<HTMLButtonElement>('button[aria-label="Account mode: Manual"]')!.click());
+ await act(async()=>node.querySelector<HTMLInputElement>('input[value="unifiedAccount"]')!.click());
  await act(async()=>[...node.querySelectorAll("button")].find(b=>b.textContent==="Switch to Unified")!.click());
  expect(state.send).toHaveBeenCalledWith({user:state.address,abstraction:"unifiedAccount"});
  expect(state.toastError).toHaveBeenCalledWith("Signature cancelled.");

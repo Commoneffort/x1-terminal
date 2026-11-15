@@ -1,7 +1,7 @@
 import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
 import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
@@ -49,6 +49,7 @@ export function AccountModeControl() {
 function AccountModeContent({ address, testnet }: { address: `0x${string}`; testnet: boolean }) {
 	const [open, setOpen] = useState(false);
 	const [selected, setSelected] = useState<Mode>("disabled");
+	const popup = useRef<HTMLDivElement>(null);
 	const mode = useQuery({
 		queryKey: ["account-mode", address, testnet],
 		queryFn: ({ signal }) => getInfoClient().userAbstraction({ user: address }, signal),
@@ -74,7 +75,7 @@ function AccountModeContent({ address, testnet }: { address: `0x${string}`; test
 	}
 
 	function openDialog() {
-		setSelected(mode.data === "unifiedAccount" ? "disabled" : "unifiedAccount");
+		setSelected(mode.data === "unifiedAccount" ? "unifiedAccount" : "disabled");
 		setOpen(true);
 		void mode.refetch();
 	}
@@ -98,7 +99,7 @@ function AccountModeContent({ address, testnet }: { address: `0x${string}`; test
 					if (!change.isPending) setOpen(value);
 				}}
 			>
-				<ModalPopup size="sm" showClose={!change.isPending}>
+				<ModalPopup ref={popup} initialFocus={popup} size="sm" showClose={!change.isPending}>
 					<ModalHeader>
 						<ModalTitle>Account mode</ModalTitle>
 						<ModalDescription>Current mode: {mode.isError ? "Unavailable" : current}</ModalDescription>
