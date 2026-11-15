@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { type Address, type Hex, zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useConnection } from "wagmi";
@@ -11,6 +12,7 @@ import {
 import { BUILDER_CONFIGURED, DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { useTradingAccount } from "@/hooks/use-trading-account";
 import { sealAgentKey } from "@/lib/auto-trader/api";
+import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
 import { useAutoTraderMutation, useAutoTraderStatus } from "@/lib/auto-trader/hooks";
 import { accountEquity } from "@/lib/auto-trader/targets";
 import { useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
@@ -45,8 +47,6 @@ export function useAutoTraderSetup() {
 	const approveAgent = useExchange("approveAgent");
 	const pending = useRef<PendingKey | null>(null);
 	const [busy, setBusy] = useState<SetupStep | null>(null);
-	const [progress, setProgress] = useState("");
-	const [error, setError] = useState<string | null>(null);
 
 	useEffect(
 		() => () => {
@@ -72,32 +72,37 @@ export function useAutoTraderSetup() {
 		if (!configured) throw new Error("This terminal's builder does not match the Auto Trader service.");
 	}
 
-	async function run(step: SetupStep, job: () => Promise<void>) {
+	async function run(step: SetupStep, job: (progress: (text: string) => void) => Promise<void>, done: string) {
 		if (busy) return;
 		setBusy(step);
-		setError(null);
+		const id = toast.loading("Confirm in your wallet.");
+		const progress = (text: string) => toast.loading(text, { id });
 		try {
 			guard();
-			await job();
+			await job(progress);
+			toast.success(done, { id });
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Setup failed. Try again.");
+			toast.error(autoTraderErrorMessage(e), { id });
 		} finally {
 			setBusy(null);
-			setProgress("");
 		}
 	}
 
 	function approve() {
-		return run("fee", async () => {
-			setProgress("Confirm the fee approval in your wallet.");
-			await approveFee.mutateAsync({ builder: AUTO_TRADER_BUILDER, maxFeeRate: "0.05%" });
-			const checked = await fee.refetch();
-			if (checked.isError || checked.data === undefined || checked.data < 50)
-				throw new Error("Fee approval sent. It is not confirmed yet. Try again in a moment.");
-		});
+		return run(
+			"fee",
+			async (progress) => {
+				progress("Confirm the fee approval in your wallet.");
+				await approveFee.mutateAsync({ builder: AUTO_TRADER_BUILDER, maxFeeRate: "0.05%" });
+				const checked = await fee.refetch();
+				if (checked.isError || checked.data === undefined || checked.data < 50)
+					throw new Error("Fee approval sent. It is not confirmed yet. Try again in a moment.");
+			},
+			"Builder fee approved.",
+		);
 	}
 
-	async function ensureAgent(): Promise<PendingKey> {
+	async function ensureAgent(progress: (text: string) => void): Promise<PendingKey> {
 		if (!pending.current) {
 			const key = generatePrivateKey();
 			pending.current = { key, address: privateKeyToAccount(key).address, validUntil: Date.now() + KEY_DAYS * DAY_MS };
@@ -108,7 +113,7 @@ export function useAutoTraderSetup() {
 		const existing = await agents.refetch();
 		if (existing.isError) throw new Error("Could not check your API wallets. Try again.");
 		if (!isApproved(existing.data)) {
-			setProgress("Signature 1 of 2: approve the trading key.");
+			progress("Signature 1 of 2: approve the trading key.");
 			await approveAgent.mutateAsync({
 				agentAddress: fresh.address,
 				agentName: `${AUTO_TRADER_AGENT_NAME} valid_until ${fresh.validUntil}`,
@@ -121,26 +126,30 @@ export function useAutoTraderSetup() {
 	}
 
 	function createKey() {
-		return run("key", async () => {
-			const fresh = await ensureAgent();
-			setProgress("Signature 2 of 2: register the key with Auto Trader.");
-			const settings = {
-				...(status.data?.settings ?? AUTO_TRADER_DEFAULTS),
-				exclude: status.data?.settings?.exclude ?? [],
-			};
-			await control.mutateAsync({
-				action: "register",
-				body: (serverKey: string) => ({
-					master,
-					agent: fresh.address,
-					sealedKey: sealAgentKey(fresh.key, serverKey),
-					settings,
-				}),
-			});
-			fresh.key = "0x";
-			pending.current = null;
-			await status.refetch();
-		});
+		return run(
+			"key",
+			async (progress) => {
+				const fresh = await ensureAgent(progress);
+				progress("Signature 2 of 2: register the key with Auto Trader.");
+				const settings = {
+					...(status.data?.settings ?? AUTO_TRADER_DEFAULTS),
+					exclude: status.data?.settings?.exclude ?? [],
+				};
+				await control.mutateAsync({
+					action: "register",
+					body: (serverKey: string) => ({
+						master,
+						agent: fresh.address,
+						sealedKey: sealAgentKey(fresh.key, serverKey),
+						settings,
+					}),
+				});
+				fresh.key = "0x";
+				pending.current = null;
+				await status.refetch();
+			},
+			"Auto Trader is set up. It is paused until you start it.",
+		);
 	}
 
 	return {
@@ -151,8 +160,6 @@ export function useAutoTraderSetup() {
 		equity,
 		portfolioMargin,
 		busy,
-		progress,
-		error,
 		approve,
 		createKey,
 	};

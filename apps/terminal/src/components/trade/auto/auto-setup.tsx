@@ -90,8 +90,6 @@ export function AutoSetup() {
 			>
 				{action.label}
 			</Button>
-			{setup.progress && <p className="text-xs text-fg-secondary">{setup.progress}</p>}
-			{setup.error && <p className="text-xs text-market-down">{setup.error}</p>}
 			{!setup.configured && (
 				<p className="text-xs text-market-down">This terminal's builder does not match the Auto Trader service.</p>
 			)}

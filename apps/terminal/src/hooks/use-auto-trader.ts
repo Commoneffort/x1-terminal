@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { zeroAddress } from "viem";
 import { useConnection } from "wagmi";
 import { AUTO_TRADER_BUILDER, AUTO_TRADER_MIN_EQUITY } from "@/config/auto-trader";
 import { useTradingAccount } from "@/hooks/use-trading-account";
+import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
 import { useAutoTraderMutation, useAutoTraderSignal, useAutoTraderStatus } from "@/lib/auto-trader/hooks";
 import { autoTraderPhase } from "@/lib/auto-trader/phase";
 import { accountEquity, allowedMarkets, validateSettings } from "@/lib/auto-trader/targets";
@@ -28,7 +30,6 @@ export function useAutoTrader() {
 	const spot = useInfo("spotClearinghouseState", { user: master }, lazy);
 	const mode = useInfo("userAbstraction", { user: master }, lazy);
 	const [pending, setPending] = useState<Op | null>(null);
-	const [error, setError] = useState<string | null>(null);
 
 	const universe = signal.isError ? [] : [...new Set(signal.data?.coins.map((c) => c.coin) ?? [])];
 	const settings = status.data?.settings;
@@ -59,36 +60,44 @@ export function useAutoTrader() {
 		if (saved) validateSettings(saved, universe);
 	}
 
-	async function run(op: Op, job: () => Promise<unknown>) {
+	async function run(op: Op, job: () => Promise<unknown>, done: string) {
 		if (pending) return;
 		setPending(op);
-		setError(null);
 		try {
 			await job();
 			await status.refetch();
+			toast.success(done);
 		} catch (e) {
-			setError(e instanceof Error ? e.message : "Auto Trader request failed. Try again.");
+			toast.error(autoTraderErrorMessage(e));
 		} finally {
 			setPending(null);
 		}
 	}
 
 	function start() {
-		return run("start", async () => {
-			await verifyReady();
-			await control.mutateAsync({ action: "resume", body: {} });
-		});
+		return run(
+			"start",
+			async () => {
+				await verifyReady();
+				await control.mutateAsync({ action: "resume", body: {} });
+			},
+			"Auto Trader started.",
+		);
 	}
 
 	function pause() {
-		return run("pause", () => control.mutateAsync({ action: "pause", body: {} }));
+		return run("pause", () => control.mutateAsync({ action: "pause", body: {} }), "Auto Trader paused.");
 	}
 
 	function saveSettings(next: AutoTraderSettings) {
-		return run("settings", async () => {
-			validateSettings(next, universe);
-			await control.mutateAsync({ action: "settings", body: { ...next, exclude: next.exclude ?? [] } });
-		});
+		return run(
+			"settings",
+			async () => {
+				validateSettings(next, universe);
+				await control.mutateAsync({ action: "settings", body: { ...next, exclude: next.exclude ?? [] } });
+			},
+			"Auto Trader settings saved.",
+		);
 	}
 
 	return {
@@ -102,8 +111,6 @@ export function useAutoTrader() {
 		universe,
 		markets,
 		pending,
-		error,
-		clearError: () => setError(null),
 		start,
 		pause,
 		saveSettings,

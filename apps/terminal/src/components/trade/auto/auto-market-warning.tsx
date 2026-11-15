@@ -35,7 +35,6 @@ export function AutoMarketWarning({ coin, label, isPerp, className }: Props) {
 					{busy ? "Confirm in wallet…" : "Exclude"}
 				</button>
 			</div>
-			{auto.error && <p className="text-xs text-market-down">{auto.error}</p>}
 		</div>
 	);
 }

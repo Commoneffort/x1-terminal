@@ -88,7 +88,6 @@ function AutoControls({ auto }: { auto: ReturnType<typeof useAutoTrader> }) {
 			)}
 
 			<div className="flex flex-col gap-2">
-				{auto.error && <div className="text-xs text-market-down">{auto.error}</div>}
 				{trading ? (
 					<Button
 						variant="secondary"
