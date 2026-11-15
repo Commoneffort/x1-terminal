@@ -1,17 +1,9 @@
-import {
-	Button,
-	ButtonIcon,
-	Modal,
-	ModalContent,
-	ModalDescription,
-	ModalHeader,
-	ModalPopup,
-	ModalTitle,
-} from "@hypeterminal/ui";
+import { Button, ButtonIcon, Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { ArrowsDownUpIcon, CaretDownIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
+import { ArrowsDownUpIcon, CaretDownIcon, CaretLeftIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -32,13 +24,11 @@ import {
 	useSwapModalOpen,
 	useSwapModalToToken,
 } from "@/stores/use-global-modal-store";
-import { TokenSelectorDropdown } from "./token-selector-dropdown";
+import { AssetDisplay } from "./asset-display";
+import { SwapTokenPicker } from "./swap-token-picker";
 import { TradingActionButton } from "./trading-action-button";
 
 const DEFAULT_SLIPPAGE_BPS = 100;
-
-const quickFillChipClass =
-	"bg-control-hover text-fg-muted hover:text-fg data-disabled:bg-control-hover data-disabled:text-fg-disabled";
 
 export function SpotSwapModal() {
 	const isOpen = useSwapModalOpen();
@@ -87,7 +77,7 @@ export function SpotSwapModalContent({
 	const [fromToken, setFromToken] = useState(initialFromToken);
 	const [toToken, setToToken] = useState(defaultToToken);
 	const [amount, setAmount] = useState("");
-	const [error, setError] = useState<string | null>(null);
+	const [picking, setPicking] = useState<"from" | "to" | null>(null);
 	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, SWAP_SUCCESS_DURATION_MS);
 
 	const getTokenBalance = useCallback(
@@ -158,13 +148,11 @@ export function SpotSwapModalContent({
 		setFromToken(newFrom);
 		setToToken(newTo);
 		setAmount("");
-		setError(null);
 	}
 
 	function handleFromTokenChange(token: string) {
 		setFromToken(token);
 		setAmount("");
-		setError(null);
 
 		const pairs = getAvailablePairTokens(token, spotMarkets);
 		if (!pairs.some((p) => p.name === toToken)) {
@@ -174,7 +162,6 @@ export function SpotSwapModalContent({
 
 	function handleToTokenChange(token: string) {
 		setToToken(token);
-		setError(null);
 
 		const pairs = getAvailablePairTokens(token, spotMarkets);
 		if (!pairs.some((p) => p.name === fromToken)) {
@@ -197,8 +184,6 @@ export function SpotSwapModalContent({
 	const handleSubmit = useCallback(async () => {
 		if (!spotMarket || orderSize <= 0 || amountValue <= 0 || amountValue > maxSpend || isSubmitting) return;
 
-		setError(null);
-
 		const plan = buildOrderPlan({
 			kind: "swap",
 			assetId: spotMarket.assetId,
@@ -214,7 +199,7 @@ export function SpotSwapModalContent({
 			isBuying &&
 			plan.orders.some((order) => Number(order.p) * Number(order.s) > fromBalance - reserveFromBalance)
 		) {
-			setError("Reduce the swap amount slightly to leave the withdrawal activation reserve.");
+			toast.error("Reduce the swap amount slightly to leave the withdrawal activation reserve.");
 			return;
 		}
 		const result = await submitPlan(plan);
@@ -222,7 +207,7 @@ export function SpotSwapModalContent({
 			onSubmitted?.();
 			triggerAutoClose();
 		} else {
-			setError(result.error || t`Swap failed`);
+			toast.error(result.error || t`Swap failed`);
 		}
 	}, [
 		spotMarket,
@@ -293,11 +278,6 @@ export function SpotSwapModalContent({
 							Amount exceeds the balance available to swap.
 						</p>
 					)}
-					{error && (
-						<p role="alert" className="text-xs text-market-down">
-							{error}
-						</p>
-					)}
 					{showSuccess && <output className="block text-xs text-market-up">Swap submitted.</output>}
 					<TradingActionButton
 						size="md"
@@ -329,166 +309,152 @@ export function SpotSwapModalContent({
 		hasAmount: amountValue > 0,
 		fromName,
 	});
+
+	function pick(token: string) {
+		if (picking === "from") handleFromTokenChange(token);
+		if (picking === "to") handleToTokenChange(token);
+		setPicking(null);
+	}
+
+	function setPartial(fraction: number) {
+		setAmount(String(maxSpend * fraction));
+	}
+
 	return (
 		<Modal open onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm" showClose={!isSubmitting}>
 				<ModalHeader>
-					<ModalTitle>
-						<Trans>Swap</Trans>
-					</ModalTitle>
-					<ModalDescription>Use your Hyperliquid spot balance</ModalDescription>
-				</ModalHeader>
-				<ModalContent className="space-y-3">
-					{contextNote && <p className="text-xs text-fg-muted">{contextNote}</p>}
-					<div className="space-y-1">
-						<TokenField
-							label="You pay"
-							balance={fromBalance}
-							balanceToken={fromName}
-							tokenSelector={
-								<TokenSelectorDropdown
-									ariaLabel="Pay token"
-									tokens={availableFromTokens}
-									selectedToken={fromToken}
-									onSelect={handleFromTokenChange}
-									getBalance={getTokenBalance}
-									disabled={isDisabled || fixedPair}
-								/>
-							}
-						>
-							<NumberInput
-								aria-label="Swap amount"
-								placeholder="0"
-								value={amount}
-								onChange={(e) => {
-									setAmount(e.target.value);
-									setError(null);
-								}}
-								disabled={isDisabled}
-								invalid={insufficientBalance}
-								suffix={
-									<span className="inline-flex items-center gap-1">
-										<Button
-											variant="secondary"
-											intent="neutral"
-											size="xxs"
-											className={quickFillChipClass}
-											disabled={isDisabled || fromBalance <= 0}
-											onClick={() => {
-												setAmount(String(maxSpend / 2));
-												setError(null);
-											}}
-										>
-											Half
-										</Button>
-										<Button
-											variant="secondary"
-											intent="neutral"
-											size="xxs"
-											className={quickFillChipClass}
-											disabled={isDisabled || fromBalance <= 0}
-											onClick={handleMaxClick}
-										>
-											Max
-										</Button>
-									</span>
-								}
-							/>
-						</TokenField>
-						<div className="flex justify-center">
-							<ButtonIcon
-								variant="secondary"
-								intent="neutral"
-								size="sm"
-								onClick={handleFlip}
-								disabled={isDisabled || fixedPair}
-								aria-label={t`Swap direction`}
+					<ModalTitle className="flex items-center gap-2">
+						{picking && (
+							<button
+								type="button"
+								onClick={() => setPicking(null)}
+								aria-label="Back to swap"
+								className="-ml-1 grid size-7 place-items-center rounded-8 text-fg-muted transition-colors hover:bg-control hover:text-fg"
 							>
-								<ArrowsDownUpIcon className="size-4" />
-							</ButtonIcon>
-						</div>
-						<TokenField
-							label="You receive"
-							hint="Estimated"
-							balance={toBalance}
-							balanceToken={toName}
-							tokenSelector={
-								<TokenSelectorDropdown
-									ariaLabel="Receive token"
-									tokens={availableToTokens}
-									selectedToken={toToken}
-									onSelect={handleToTokenChange}
-									getBalance={getTokenBalance}
-									disabled={isDisabled || fixedPair}
-								/>
-							}
-						>
-							<output
-								aria-label="Estimated receive"
-								aria-live="polite"
-								title={estimatedReceive > 0 ? formatToken(estimatedReceive, 6) : "0"}
-								className={cn(
-									"flex h-8 items-center rounded-8 bg-control px-3 text-xs tabular-nums max-md:h-10 max-md:text-base",
-									estimatedReceive > 0 ? "text-fg" : "text-fg-muted",
-								)}
-							>
-								<span className="truncate">{estimatedReceive > 0 ? formatToken(estimatedReceive, 6) : "0"}</span>
-							</output>
-						</TokenField>
-					</div>
-					<details className="group text-xs text-fg-muted">
-						<summary className="flex min-h-6 cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-							<span className="tabular-nums">
-								{rate > 0 ? `1 ${fromName} ≈ ${formatToken(rate, 6)} ${toName}` : "Rate unavailable"}
-							</span>
-							<span className="inline-flex shrink-0 items-center gap-1">
-								{DEFAULT_SLIPPAGE_BPS / 100}% slippage
-								<CaretDownIcon
-									className="size-3 transition-transform group-open:rotate-180 motion-reduce:transition-none"
-									aria-hidden="true"
-								/>
-							</span>
-						</summary>
-						<div className="mt-1 border-t border-stroke-weak pt-2">
-							<InfoRowGroup>
-								<InfoRow label="Market" value={spotMarket?.pairName ?? "—"} />
-								<InfoRow label="Slippage tolerance" value={`${DEFAULT_SLIPPAGE_BPS / 100}%`} />
-							</InfoRowGroup>
-							<p className="pt-1">Output is estimated before trading fees. Final execution may differ.</p>
-						</div>
-					</details>
-					{reserveFromBalance > 0 && (
-						<p className="text-xs text-fg-muted">
-							{formatToken(reserveFromBalance, { decimals: 2, symbol: fromName })} reserved for withdrawal activation.
-						</p>
-					)}
-					{error && !showSuccess && (
-						<p role="alert" className="flex items-start gap-2 rounded-8 bg-control p-3 text-xs text-market-down">
-							<WarningIcon className="size-4 shrink-0" />
-							{error}
-						</p>
-					)}
-					{showSuccess && (
-						<output className="block flex items-center justify-center gap-2 text-xs text-market-up">
-							<CheckIcon className="size-4" />
-							Swap submitted
-						</output>
-					)}
-					<TradingActionButton
-						size="md"
-						onClick={handleSubmit}
-						disabled={!canSubmit || isSubmitting}
-						className="w-full"
-					>
-						{isSubmitting ? (
-							<>
-								<SpinnerGapIcon className="size-4 animate-spin" />
-								Swapping…
-							</>
-						) : (
-							actionLabel
+								<CaretLeftIcon weight="bold" className="size-4" />
+							</button>
 						)}
-					</TradingActionButton>
+						{picking ? "Select a token" : <Trans>Swap</Trans>}
+					</ModalTitle>
+				</ModalHeader>
+				<ModalContent className="flex flex-col gap-3">
+					{picking ? (
+						<SwapTokenPicker
+							tokens={picking === "from" ? availableFromTokens : availableToTokens}
+							selected={picking === "from" ? fromToken : toToken}
+							getBalance={getTokenBalance}
+							onSelect={pick}
+						/>
+					) : (
+						<>
+							{contextNote && <p className="text-xs text-fg-muted">{contextNote}</p>}
+							<div className="relative flex flex-col gap-1">
+								<SwapSide
+									label="You pay"
+									balance={formatToken(fromBalance, { decimals: 4, symbol: fromName })}
+									actions={
+										<>
+											<QuickFill disabled={isDisabled || fromBalance <= 0} onClick={() => setPartial(0.5)}>
+												Half
+											</QuickFill>
+											<QuickFill disabled={isDisabled || fromBalance <= 0} onClick={handleMaxClick}>
+												Max
+											</QuickFill>
+										</>
+									}
+									token={
+										<TokenPill
+											token={fromToken}
+											label={fromName}
+											disabled={isDisabled || fixedPair}
+											onClick={() => setPicking("from")}
+										/>
+									}
+								>
+									<input
+										aria-label="Swap amount"
+										inputMode="decimal"
+										placeholder="0"
+										value={amount}
+										disabled={isDisabled}
+										onChange={(e) => {
+											if (!/^\d*\.?\d*$/.test(e.target.value)) return;
+											setAmount(e.target.value);
+										}}
+										className={cn(
+											"w-full min-w-0 bg-transparent text-2xl font-medium tabular-nums outline-none placeholder:text-fg-disabled",
+											insufficientBalance ? "text-market-down" : "text-fg",
+										)}
+									/>
+								</SwapSide>
+								<div className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-overlay p-1">
+									<ButtonIcon
+										variant="secondary"
+										intent="neutral"
+										size="sm"
+										onClick={handleFlip}
+										disabled={isDisabled || fixedPair}
+										aria-label={t`Swap direction`}
+										className="rounded-full bg-control-hover"
+									>
+										<ArrowsDownUpIcon className="size-4" />
+									</ButtonIcon>
+								</div>
+								<SwapSide
+									label="You receive"
+									balance={formatToken(toBalance, { decimals: 4, symbol: toName })}
+									token={
+										<TokenPill
+											token={toToken}
+											label={toName}
+											disabled={isDisabled || fixedPair}
+											onClick={() => setPicking("to")}
+										/>
+									}
+								>
+									<output
+										aria-label="Estimated receive"
+										aria-live="polite"
+										className={cn(
+											"block truncate text-2xl font-medium tabular-nums",
+											estimatedReceive > 0 ? "text-fg" : "text-fg-disabled",
+										)}
+									>
+										{estimatedReceive > 0 ? formatToken(estimatedReceive, 6) : "0"}
+									</output>
+								</SwapSide>
+							</div>
+							<InfoRowGroup className="px-1">
+								<InfoRow
+									label="Rate"
+									value={rate > 0 ? `1 ${fromName} ≈ ${formatToken(rate, 6)} ${toName}` : "Unavailable"}
+								/>
+								<InfoRow label="Max slippage" value={`${DEFAULT_SLIPPAGE_BPS / 100}%`} />
+								{reserveFromBalance > 0 && (
+									<InfoRow
+										label="Kept for activation"
+										value={formatToken(reserveFromBalance, { decimals: 2, symbol: fromName })}
+									/>
+								)}
+							</InfoRowGroup>
+							<TradingActionButton
+								size="md"
+								onClick={handleSubmit}
+								disabled={!canSubmit || isSubmitting}
+								className="w-full"
+							>
+								{isSubmitting ? (
+									<>
+										<SpinnerGapIcon className="size-4 animate-spin" />
+										Swapping…
+									</>
+								) : (
+									actionLabel
+								)}
+							</TradingActionButton>
+						</>
+					)}
 				</ModalContent>
 			</ModalPopup>
 		</Modal>
@@ -511,31 +477,64 @@ function getActionLabel({ showSuccess, insufficientBalance, noPairAvailable, has
 	return "Swap";
 }
 
-interface TokenFieldProps {
+interface SwapSideProps {
 	label: string;
-	hint?: string;
-	balance: number;
-	balanceToken: string;
-	tokenSelector: React.ReactNode;
+	balance: string;
+	actions?: React.ReactNode;
+	token: React.ReactNode;
 	children: React.ReactNode;
 }
 
-function TokenField({ label, hint, balance, balanceToken, tokenSelector, children }: TokenFieldProps) {
+function SwapSide({ label, balance, actions, token, children }: SwapSideProps) {
 	return (
-		<div className="space-y-1">
-			<div className="flex min-h-6 items-center justify-between gap-2 text-xs text-fg-muted">
-				<span>
-					{label}
-					{hint && <span className="text-fg-disabled"> · {hint}</span>}
-				</span>
-				<span className="min-w-0 truncate tabular-nums" title={`${balance} ${balanceToken}`}>
-					Balance: {formatToken(balance, { decimals: 6, symbol: balanceToken })}
+		<div className="flex flex-col gap-3 rounded-12 bg-control p-4">
+			<div className="flex min-h-5 items-center justify-between gap-2 text-xs text-fg-muted">
+				<span>{label}</span>
+				<span className="flex min-w-0 items-center gap-2">
+					<span className="truncate tabular-nums">{balance}</span>
+					{actions}
 				</span>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-3">
 				<div className="min-w-0 flex-1">{children}</div>
-				<div className="flex h-8 shrink-0 items-center rounded-8 bg-control px-1 max-md:h-10">{tokenSelector}</div>
+				{token}
 			</div>
 		</div>
+	);
+}
+
+function QuickFill({ disabled, onClick, children }: { disabled: boolean; onClick: () => void; children: string }) {
+	return (
+		<button
+			type="button"
+			disabled={disabled}
+			onClick={onClick}
+			className="font-medium text-fg-secondary transition-colors hover:text-fg disabled:text-fg-disabled"
+		>
+			{children}
+		</button>
+	);
+}
+
+interface TokenPillProps {
+	token: string;
+	label: string;
+	disabled: boolean;
+	onClick: () => void;
+}
+
+function TokenPill({ token, label, disabled, onClick }: TokenPillProps) {
+	return (
+		<button
+			type="button"
+			disabled={disabled}
+			onClick={onClick}
+			aria-label={`Select token: ${label}`}
+			className="flex h-9 shrink-0 items-center gap-2 rounded-full bg-control-hover pr-3 pl-1.5 text-sm font-medium transition-colors hover:bg-fill-hover disabled:cursor-default"
+		>
+			<AssetDisplay coin={token} hideName iconClassName="size-6" />
+			{label}
+			{!disabled && <CaretDownIcon weight="bold" className="size-3 text-fg-muted" />}
+		</button>
 	);
 }

@@ -131,7 +131,7 @@ it("fills half the spendable balance and clears the amount when reversing direct
 	);
 	expect(node.textContent).toContain("You pay");
 	expect(node.textContent).toContain("You receive");
-	expect(node.querySelector("details summary")?.textContent).toContain("1% slippage");
+	expect(node.textContent).toContain("Max slippage");
 	expect(node.textContent).toContain("Enter an amount");
 	await act(async () => [...node.querySelectorAll("button")].find((b) => b.textContent === "Half")!.click());
 	expect(node.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]')!.value).toBe("50");
@@ -139,7 +139,7 @@ it("fills half the spendable balance and clears the amount when reversing direct
 	expect(state.submit).not.toHaveBeenCalled();
 	await act(async () => node.querySelector<HTMLButtonElement>('button[aria-label="Swap direction"]')!.click());
 	expect(node.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]')!.value).toBe("");
-	expect(node.querySelector("[data-token-selector]")?.textContent).toBe("USOL");
+	expect(node.querySelector("button[aria-label^=\"Select token\"]")?.getAttribute("aria-label")).toMatch(/SOL/);
 	expect(state.submit).not.toHaveBeenCalled();
 	await act(async () => root.unmount());
 });
