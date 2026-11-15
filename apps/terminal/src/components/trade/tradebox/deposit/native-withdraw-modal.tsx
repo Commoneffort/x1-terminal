@@ -5,8 +5,8 @@ import { readNativeEthereumRecipient } from "@/lib/wallet/native-ethereum";
 import { NativeWithdrawForm } from "../../positions/native-withdraw-form";
 
 const WITHDRAW_ASSET_OPTIONS = [
-	{ value: "SOL", label: "SOL · Solana" },
-	{ value: "ETH", label: "ETH · Ethereum" },
+	{ value: "SOL", label: "Solana" },
+	{ value: "ETH", label: "Ethereum" },
 ];
 
 export function NativeWithdrawModal({ onClose, initialAsset }: { onClose: () => void; initialAsset?: "SOL" | "ETH" }) {

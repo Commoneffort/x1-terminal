@@ -18,7 +18,7 @@ it("switches to ETH when a native Ethereum wallet is connected and respects a la
 	await act(async () => root.render(createElement(NativeWithdrawModal, { initialAsset: "SOL", onClose: vi.fn() })));
 	expect(readChoice(node, "Withdrawal asset")).toBe("ETH");
 	expect(node.textContent).toContain("Recipient for ETH");
-	await chooseOption(node, "Withdrawal asset", { value: "SOL", label: "SOL · Solana" });
+	await chooseOption(node, "Withdrawal asset", { value: "SOL", label: "Solana" });
 	await act(async () => window.dispatchEvent(new Event("focus")));
 	expect(readChoice(node, "Withdrawal asset")).toBe("SOL");
 	await act(async () => root.unmount());
