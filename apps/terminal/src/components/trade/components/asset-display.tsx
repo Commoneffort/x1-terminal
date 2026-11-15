@@ -1,5 +1,6 @@
 import { Avatar } from "@hypeterminal/ui";
 import type { ReactNode } from "react";
+import { useLightBacking } from "@/hooks/ui/use-light-backing";
 import { cn } from "@/lib/cn";
 import type { SpotToken, UnifiedMarket } from "@/lib/hyperliquid/markets";
 import { useMarkets } from "@/lib/hyperliquid/markets/use-markets";
@@ -36,6 +37,8 @@ function resolveIconUrl(market: UnifiedMarket | undefined, token: SpotToken | un
 	return market?.iconUrl ?? token?.iconUrl;
 }
 
+const LIGHT_BACKING_CLASS = "rounded-full bg-white [&_img]:scale-[0.78]";
+
 function getFallbackText(name: string): string {
 	return name.slice(0, 2).toUpperCase();
 }
@@ -61,9 +64,16 @@ export function AssetDisplay({
 	const name = resolveName(market, token, coin, variant);
 	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token);
 	const fallbackText = getFallbackText(name);
+	const lightBacking = useLightBacking(showIcon ? iconUrl : undefined);
 
 	const icon = (
-		<Avatar className={cn("size-4", iconClassName)} size="sm" src={iconUrl} alt={name} initials={fallbackText} />
+		<Avatar
+			className={cn("size-4", iconClassName, lightBacking && LIGHT_BACKING_CLASS)}
+			size="sm"
+			src={iconUrl}
+			alt={name}
+			initials={fallbackText}
+		/>
 	);
 
 	if (showIcon && !showName) {

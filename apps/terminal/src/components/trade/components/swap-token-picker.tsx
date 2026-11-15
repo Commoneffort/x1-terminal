@@ -1,10 +1,10 @@
-import { Avatar } from "@hypeterminal/ui";
 import { CheckIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
 import { searchSwapTokens } from "@/lib/trade/swap-token-search";
+import { AssetDisplay } from "./asset-display";
 
 interface Props {
 	tokens: SpotToken[];
@@ -45,12 +45,7 @@ export function SwapTokenPicker({ tokens, selected, getBalance, onSelect }: Prop
 								active && "bg-control-hover",
 							)}
 						>
-							<Avatar
-								size="sm"
-								src={token.iconUrl}
-								alt={token.displayName}
-								initials={token.displayName.slice(0, 2).toUpperCase()}
-							/>
+							<AssetDisplay coin={token.name} hideName iconClassName="size-8" />
 							<span className="flex min-w-0 flex-1 flex-col">
 								<span className="text-sm font-medium">{token.displayName}</span>
 								{token.fullName && <span className="truncate text-xs text-fg-muted">{token.fullName}</span>}

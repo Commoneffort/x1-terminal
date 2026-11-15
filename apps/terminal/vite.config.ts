@@ -8,6 +8,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 
 const isAnalyze = process.env.ANALYZE === 'true'
 const autoTraderProxy = {
+  '/coins': { target: 'https://app.hyperliquid.xyz', changeOrigin: true },
   '/api/copybot': { target: 'https://wxnt-sale-sim.vercel.app', changeOrigin: true },
   '/api/auto-trader-signal': {
     target: 'https://wxnt-sale-sim.vercel.app', changeOrigin: true,

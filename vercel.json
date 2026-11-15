@@ -25,6 +25,10 @@
   ],
   "rewrites": [
     {
+      "source": "/coins/:path*",
+      "destination": "https://app.hyperliquid.xyz/coins/:path*"
+    },
+    {
       "source": "/api/copybot",
       "destination": "https://wxnt-sale-sim.vercel.app/api/copybot"
     },
