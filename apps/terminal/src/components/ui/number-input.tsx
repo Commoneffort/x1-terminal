@@ -304,7 +304,6 @@ export function NumberInput({
 	const errorText = error != null && error !== false && <p className="mt-1 text-xs text-market-down">{error}</p>;
 
 	if (!label) {
-		if (!errorText) return field;
 		return (
 			<div className="w-full">
 				{field}
