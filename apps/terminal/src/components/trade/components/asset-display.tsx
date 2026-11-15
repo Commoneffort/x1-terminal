@@ -40,7 +40,7 @@ function resolveIconUrl(market: UnifiedMarket | undefined, token: SpotToken | un
 const LIGHT_BACKING_CLASS = "rounded-full bg-white [&_img]:scale-[0.78]";
 
 function getFallbackText(name: string): string {
-	return name.slice(0, 2).toUpperCase();
+	return (name.split(":").at(-1) ?? name).slice(0, 1).toUpperCase();
 }
 
 export function AssetDisplay({
