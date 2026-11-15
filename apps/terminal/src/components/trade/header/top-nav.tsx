@@ -54,23 +54,17 @@ export function TopNav() {
 						);
 					})}
 					<Divider orientation="vertical" className="mx-2 h-4 self-center" />
-					{STATIC_NAV_ITEMS.map((item) =>
-						item.key === "auto-trader" ? (
-							<a key={item.key} href="/API#auto-trader" className={cn(NAV_LINK_CLASS, "text-fg-muted hover:text-fg")}>
-								{item.label}
-							</a>
-						) : (
-							<button
-								key={item.key}
-								type="button"
-								disabled
-								tabIndex={-1}
-								className={cn(NAV_LINK_CLASS, "cursor-not-allowed text-fg-disabled")}
-							>
-								{item.label}
-							</button>
-						),
-					)}
+					{STATIC_NAV_ITEMS.map((item) => (
+						<button
+							key={item.key}
+							type="button"
+							disabled
+							tabIndex={-1}
+							className={cn(NAV_LINK_CLASS, "cursor-not-allowed text-fg-disabled")}
+						>
+							{item.label}
+						</button>
+					))}
 				</nav>
 			</div>
 
