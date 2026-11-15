@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { isDarkGlyph } from "@/lib/ui/icon-tone";
+import { iconBacking } from "@/lib/ui/icon-tone";
 
 const SIZE = 32;
 
@@ -17,15 +17,15 @@ const inside = (x: number, y: number, r: number) => (x - 15.5) ** 2 + (y - 15.5)
 
 it("flags a dark glyph on a transparent background", () => {
 	const glyph = draw((x, y) => (x > 10 && x < 22 && y > 8 && y < 24 ? [10, 10, 10, 255] : null));
-	expect(isDarkGlyph(glyph, SIZE)).toBe(true);
+	expect(iconBacking(glyph, SIZE)).toBe("light");
 });
 
 it("leaves full-circle logos alone, even when they are dark", () => {
 	const disc = draw((x, y) => (inside(x, y, 16) ? [5, 5, 5, 255] : null));
-	expect(isDarkGlyph(disc, SIZE)).toBe(false);
+	expect(iconBacking(disc, SIZE)).toBeNull();
 });
 
-it("leaves light glyphs alone", () => {
+it("gives a light glyph without a circle a dark backing", () => {
 	const glyph = draw((x, y) => (x > 10 && x < 22 && y > 8 && y < 24 ? [240, 240, 240, 255] : null));
-	expect(isDarkGlyph(glyph, SIZE)).toBe(false);
+	expect(iconBacking(glyph, SIZE)).toBe("dark");
 });

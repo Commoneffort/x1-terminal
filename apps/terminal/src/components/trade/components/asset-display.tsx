@@ -1,6 +1,6 @@
 import { Avatar } from "@hypeterminal/ui";
 import type { ReactNode } from "react";
-import { useLightBacking } from "@/hooks/ui/use-light-backing";
+import { useIconBacking } from "@/hooks/ui/use-icon-backing";
 import { cn } from "@/lib/cn";
 import type { SpotToken, UnifiedMarket } from "@/lib/hyperliquid/markets";
 import { useMarkets } from "@/lib/hyperliquid/markets/use-markets";
@@ -37,7 +37,10 @@ function resolveIconUrl(market: UnifiedMarket | undefined, token: SpotToken | un
 	return market?.iconUrl ?? token?.iconUrl;
 }
 
-const LIGHT_BACKING_CLASS = "rounded-full bg-white [&_img]:scale-[0.78]";
+const BACKING_CLASS = {
+	light: "rounded-full bg-white [&_img]:scale-[0.72]",
+	dark: "rounded-full bg-background [&_img]:scale-[0.72]",
+} as const;
 
 function getFallbackText(name: string): string {
 	return (name.split(":").at(-1) ?? name).slice(0, 1).toUpperCase();
@@ -64,11 +67,11 @@ export function AssetDisplay({
 	const name = resolveName(market, token, coin, variant);
 	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token);
 	const fallbackText = getFallbackText(name);
-	const lightBacking = useLightBacking(showIcon ? iconUrl : undefined);
+	const backing = useIconBacking(showIcon ? iconUrl : undefined);
 
 	const icon = (
 		<Avatar
-			className={cn("size-4", iconClassName, lightBacking && LIGHT_BACKING_CLASS)}
+			className={cn("size-4", iconClassName, backing && BACKING_CLASS[backing])}
 			size="sm"
 			src={iconUrl}
 			alt={name}
