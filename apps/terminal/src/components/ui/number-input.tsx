@@ -305,7 +305,7 @@ export function NumberInput({
 
 	if (!label) {
 		return (
-			<div className="w-full">
+			<div className={errorText ? "w-full" : "contents"}>
 				{field}
 				{errorText}
 			</div>
