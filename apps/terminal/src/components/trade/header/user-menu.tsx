@@ -2,6 +2,7 @@ import { Button, Dropdown } from "@hypeterminal/ui";
 import {
 	ArrowClockwiseIcon,
 	CodeIcon,
+	EyeIcon,
 	KeyIcon,
 	RobotIcon,
 	SignOutIcon,
@@ -23,7 +24,9 @@ import { removeAgentFromStorage, useInfo } from "@/lib/hyperliquid";
 import { getNetwork } from "@/lib/network";
 import { feeDecimals, feesToXnt } from "@/lib/rewards/xnt-rewards";
 import { clearX1Session } from "@/lib/x1/provider";
+import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
+import { setTradeMode } from "@/stores/use-trade-mode-store";
 import { useTradingAccountStore } from "@/stores/use-trading-account-store";
 import { AccountModeControl } from "../components/account-mode-control";
 import { ExportKeyModal } from "../components/export-key-modal";
@@ -39,6 +42,7 @@ export function UserMenu() {
 	const mutating = useIsMutating() > 0;
 	const select = useTradingAccountStore((s) => s.select);
 	const { resetForm } = useOrderEntryActions();
+	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const subaccounts = useInfo(
 		"subAccounts",
 		{ user: address ?? zeroAddress },
@@ -92,31 +96,36 @@ export function UserMenu() {
 		disconnect();
 	}
 
-	const switchItems = [
-		{
-			label: `Main account · ${shortAddress(owner)}`,
-			active: !active.isSubaccount,
-			disabled: mutating,
-			onSelect: () => choose(null),
-		},
-		...rows.map((row) => ({
-			label: `${row.name} · ${shortAddress(row.subAccountUser)}`,
-			active: activeAddress.toLowerCase() === row.subAccountUser.toLowerCase(),
-			disabled: subaccounts.isError || mutating,
-			onSelect: () => choose(row),
-		})),
-		...(subaccounts.isLoading ? [{ label: "Loading subaccounts…", disabled: true }] : []),
-		{
-			label: subaccounts.isError ? "Retry loading subaccounts" : "Refresh subaccounts",
-			icon: <ArrowClockwiseIcon className="size-4" />,
-			closeOnClick: false,
-			onSelect: () => {
-				void subaccounts.refetch();
-			},
-		},
-	];
+	const accountRows = rows.length
+		? [
+				{
+					label: `Main account · ${shortAddress(owner)}`,
+					active: !active.isSubaccount,
+					disabled: mutating,
+					onSelect: () => choose(null),
+				},
+				...rows.map((row) => ({
+					label: `${row.name} · ${shortAddress(row.subAccountUser)}`,
+					active: activeAddress.toLowerCase() === row.subAccountUser.toLowerCase(),
+					disabled: subaccounts.isError || mutating,
+					onSelect: () => choose(row),
+				})),
+			]
+		: [];
+	const accountRetry = subaccounts.isError
+		? [
+				{
+					label: "Retry loading subaccounts",
+					icon: <ArrowClockwiseIcon className="size-4" />,
+					closeOnClick: false,
+					onSelect: () => {
+						void subaccounts.refetch();
+					},
+				},
+			]
+		: [];
 
-	const accountItems = [
+	const actionItems = [
 		{
 			label: "XNT rewards",
 			icon: <XntMark size={16} />,
@@ -124,17 +133,12 @@ export function UserMenu() {
 			onSelect: () => setRewardsOpen(true),
 		},
 		{
-			label: `Copy ${activeAddress}`,
-			icon: <CopyStateIcon copied={copied} announcement="Address copied" />,
-			closeOnClick: false,
-			onSelect: () => {
-				void copy(activeAddress);
-			},
-		},
-		{
 			label: "Auto Trader",
 			icon: <RobotIcon className="size-4" />,
-			onSelect: () => window.location.assign("/API#auto-trader"),
+			onSelect: () => {
+				setTradeMode("auto");
+				setMobileActiveTab("trade");
+			},
 		},
 		{
 			label: "API wallets",
@@ -142,20 +146,47 @@ export function UserMenu() {
 			onSelect: () => window.location.assign("/API"),
 		},
 		{
-			label: "Trading setup · 0.05% fee",
+			label: "Trading setup",
 			icon: <SlidersHorizontalIcon className="size-4" />,
+			detail: "0.05% fee",
 			onSelect: () => window.dispatchEvent(new Event("x1:setup")),
 		},
 		...(derived
 			? [
 					{
-						label: "Export derived private key",
+						label: "Export private key",
 						icon: <KeyIcon className="size-4" />,
 						onSelect: () => setExportOpen(true),
 					},
 				]
 			: []),
 	];
+
+	const header = (
+		<div className="flex items-center gap-3 px-2 pt-1.5 pb-2">
+			{demo ? (
+				<span className="grid size-8 shrink-0 place-items-center rounded-8 bg-control-hover text-fg-muted">
+					<EyeIcon className="size-4" />
+				</span>
+			) : (
+				<WalletLogo connector={connector} size={32} />
+			)}
+			<span className="flex min-w-0 flex-1 flex-col">
+				<span className="truncate text-sm font-medium tabular-nums">
+					{active.subaccount?.name ?? shortAddress(activeAddress)}
+				</span>
+				<span className="truncate text-xs text-fg-muted">{getAccountLabel(derived, demo, walletName)}</span>
+			</span>
+			<button
+				type="button"
+				onClick={() => void copy(activeAddress)}
+				aria-label="Copy address"
+				className="grid size-8 shrink-0 place-items-center rounded-8 text-fg-muted transition-colors hover:bg-control-hover hover:text-fg"
+			>
+				<CopyStateIcon copied={copied} announcement="Address copied" />
+			</button>
+		</div>
+	);
 
 	return (
 		<>
@@ -174,19 +205,16 @@ export function UserMenu() {
 						</span>
 					</span>
 				}
-				popupClassName="max-h-none"
-				items={switchItems}
+				popupClassName="max-h-none min-w-64"
+				header={header}
+				items={[...accountRows, ...accountRetry]}
 				groups={[
-					{
-						label: getAccountLabel(derived, demo, walletName),
-						items: accountItems,
-					},
+					{ items: actionItems },
 					{
 						items: [
 							{
 								label: demo ? "Exit demo mode" : "Disconnect",
 								icon: <SignOutIcon className="size-4" />,
-								danger: true,
 								onSelect: handleDisconnect,
 							},
 						],
@@ -233,7 +261,7 @@ function WalletLabel({ connector, demo, name }: WalletLabelProps) {
 }
 
 function getAccountLabel(derived: boolean, demo: boolean, walletName: string) {
-	if (demo) return "Demo · read-only public account";
-	if (derived) return "Derived from your X1 signature";
-	return `${walletName} Ethereum account`;
+	if (demo) return "Demo account · read-only";
+	if (derived) return "X1 Wallet · derived key";
+	return walletName;
 }

@@ -117,6 +117,7 @@ interface DropdownBaseProps extends VariantProps<typeof dropdownTriggerVariants>
 	align?: "start" | "center" | "end";
 	triggerClassName?: string;
 	popupClassName?: string;
+	header?: React.ReactNode;
 }
 
 type DropdownProps =
@@ -137,6 +138,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 			triggerAriaLabel,
 			triggerClassName,
 			popupClassName,
+			header,
 		},
 		ref,
 	) => {
@@ -201,11 +203,13 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					<Menu.Portal>
 						<Menu.Positioner sideOffset={4} align={align} className="z-[var(--z-dropdown)]">
 							<Menu.Popup className={cn(menuPopupClass, popupClassName)}>
+								{header}
+								{header && (items?.length || groups?.length) ? <Menu.Separator className={menuSeparatorClass} /> : null}
 								{items?.map(renderItem)}
 
 								{groups?.map((group) => (
 									<React.Fragment key={group.label ?? group.items.map((item) => item.label).join("|")}>
-										{group !== groups[0] && <Menu.Separator className={menuSeparatorClass} />}
+										{(group !== groups[0] || !!items?.length) && <Menu.Separator className={menuSeparatorClass} />}
 										<Menu.Group>
 											{group.label && <Menu.GroupLabel className={menuGroupLabelClass}>{group.label}</Menu.GroupLabel>}
 											{group.items.map(renderItem)}
