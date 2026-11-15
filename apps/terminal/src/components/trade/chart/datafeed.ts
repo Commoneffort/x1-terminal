@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
+import { withRetry } from "@/lib/chart/retry";
 import { buildExecutionMarkers, type ExecutionFill } from "@/lib/chart/execution-markers";
 import { type CandleInterval, RESOLUTIONS, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
@@ -270,12 +271,12 @@ export function createDatafeed(
 				const coin = coinFromSymbolName(symbolName);
 				const displayName = symbolFromCoin(coin);
 
-				if (!(await isKnownCoin(coin))) {
+				if (!(await withRetry(() => isKnownCoin(coin)))) {
 					onError(t`Unknown symbol: ${symbolName}`);
 					return;
 				}
 
-				const pricescale = await inferPriceScale(coin);
+				const pricescale = await withRetry(() => inferPriceScale(coin));
 
 				const symbolInfo: LibrarySymbolInfo = {
 					name: displayName,
@@ -324,12 +325,14 @@ export function createDatafeed(
 					return;
 				}
 
-				const candles = await getInfoClient().candleSnapshot({
-					coin,
-					interval,
-					startTime: fromMs,
-					endTime: toMs,
-				});
+				const candles = await withRetry(() =>
+					getInfoClient().candleSnapshot({
+						coin,
+						interval,
+						startTime: fromMs,
+						endTime: toMs,
+					}),
+				);
 
 				const bars = filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
 
