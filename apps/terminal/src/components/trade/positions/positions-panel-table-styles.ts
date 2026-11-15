@@ -8,7 +8,7 @@ export const accountHeadClass = "h-6 whitespace-nowrap text-2xs font-normal uppe
 
 export const accountNumHeadClass = "text-right";
 
-export const accountCellClass = "h-7 whitespace-nowrap text-xs tabular-nums text-fg";
+export const accountCellClass = "h-9 whitespace-nowrap text-xs tabular-nums text-fg";
 
 export const accountNumCellClass = "text-right";
 
