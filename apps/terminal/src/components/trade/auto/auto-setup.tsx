@@ -1,6 +1,5 @@
 import { Button } from "@hypeterminal/ui";
 import { CheckIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
 import { AUTO_TRADER_MIN_EQUITY } from "@/config/auto-trader";
 import { type SetupStep, useAutoTraderSetup } from "@/hooks/use-auto-trader-setup";
 import { cn } from "@/lib/cn";
@@ -13,10 +12,9 @@ interface StepProps {
 	current: boolean;
 	title: string;
 	detail: string;
-	children?: ReactNode;
 }
 
-function Step({ n, done, current, title, detail, children }: StepProps) {
+function Step({ n, done, current, title, detail }: StepProps) {
 	return (
 		<li className="flex gap-3">
 			<span
@@ -32,7 +30,6 @@ function Step({ n, done, current, title, detail, children }: StepProps) {
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
 				<span className={cn("text-xs font-medium", !done && !current && "text-fg-muted")}>{title}</span>
 				<span className="text-xs text-fg-muted">{detail}</span>
-				{current && !done && children && <div className="mt-1.5">{children}</div>}
 			</div>
 		</li>
 	);
@@ -43,6 +40,11 @@ export function AutoSetup() {
 	const { open: openDeposit } = useDepositModalActions();
 	const spinner = (step: SetupStep) =>
 		setup.busy === step ? <SpinnerGapIcon className="size-4 animate-spin" /> : undefined;
+	const action = getAction(setup.current, {
+		fee: setup.approve,
+		funds: () => openDeposit("deposit"),
+		key: setup.createKey,
+	});
 	const fundsDetail =
 		setup.equity === null
 			? `Auto Trader needs ${formatUSD(AUTO_TRADER_MIN_EQUITY, 0)} or more in this account.`
@@ -61,50 +63,33 @@ export function AutoSetup() {
 					current={setup.current === "fee"}
 					title="Approve the builder fee"
 					detail="0.05% on each Auto Trader fill, plus exchange fees."
-				>
-					<Button
-						variant="filled"
-						intent="brand"
-						size="sm"
-						className="w-full"
-						onClick={setup.approve}
-						disabled={setup.busy !== null || !setup.configured}
-						iconLeft={spinner("fee")}
-					>
-						Approve fee
-					</Button>
-				</Step>
+				/>
 				<Step
 					n={2}
 					done={setup.fundsDone}
 					current={setup.current === "funds"}
 					title="Fund the account"
 					detail={setup.portfolioMargin ? "Portfolio margin accounts are not supported." : fundsDetail}
-				>
-					<Button variant="filled" intent="brand" size="sm" className="w-full" onClick={() => openDeposit("deposit")}>
-						Deposit
-					</Button>
-				</Step>
+				/>
 				<Step
 					n={3}
 					done={false}
 					current={setup.current === "key"}
 					title="Create the Auto Trader key"
 					detail="Two wallet signatures. The key can trade but cannot withdraw. Auto Trader starts paused."
-				>
-					<Button
-						variant="filled"
-						intent="brand"
-						size="sm"
-						className="w-full"
-						onClick={setup.createKey}
-						disabled={setup.busy !== null || !setup.configured}
-						iconLeft={spinner("key")}
-					>
-						Create key
-					</Button>
-				</Step>
+				/>
 			</ol>
+			<Button
+				variant="filled"
+				intent="brand"
+				size="md"
+				className="w-full"
+				onClick={action.run}
+				disabled={setup.busy !== null || (action.needsBuilder && !setup.configured)}
+				iconLeft={spinner(setup.current)}
+			>
+				{action.label}
+			</Button>
 			{setup.progress && <p className="text-xs text-fg-secondary">{setup.progress}</p>}
 			{setup.error && <p className="text-xs text-market-down">{setup.error}</p>}
 			{!setup.configured && (
@@ -112,4 +97,10 @@ export function AutoSetup() {
 			)}
 		</div>
 	);
+}
+
+function getAction(step: SetupStep, handlers: Record<SetupStep, () => void>) {
+	if (step === "fee") return { label: "Approve fee", run: handlers.fee, needsBuilder: true };
+	if (step === "funds") return { label: "Deposit", run: handlers.funds, needsBuilder: false };
+	return { label: "Create key", run: handlers.key, needsBuilder: true };
 }
