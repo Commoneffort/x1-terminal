@@ -8,10 +8,11 @@ import { isTrading, PHASE_LABEL, phaseTone } from "@/lib/auto-trader/phase";
 import { formatUSD } from "@/lib/format";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AutoSettingsForm } from "./auto-settings-form";
+import { AutoSetup } from "./auto-setup";
 import { AutoStartModal } from "./auto-start-modal";
 import { AutoStatusDot } from "./auto-status-dot";
 
-const SETUP_URL = "/API#auto-trader";
+const SETTINGS_URL = "/API#auto-trader";
 
 export function AutoTradePanel() {
 	const auto = useAutoTrader();
@@ -26,34 +27,6 @@ export function AutoTradePanel() {
 
 function AutoNote({ text }: { text: string }) {
 	return <p className="px-3 py-6 text-center text-xs text-fg-muted">{text}</p>;
-}
-
-function AutoSetup() {
-	return (
-		<div className="flex flex-col gap-4 px-3 pt-4 pb-3">
-			<div className="flex flex-col gap-1.5">
-				<div className="text-sm font-medium">Auto Trader</div>
-				<p className="text-xs text-fg-muted">
-					Auto Trader follows the Mood Ring signal. It trades this account about every 5 minutes, inside the limits you
-					set.
-				</p>
-			</div>
-			<ul className="flex flex-col gap-1.5 text-xs text-fg-secondary">
-				<li>Your funds stay in your Hyperliquid account.</li>
-				<li>Its trading key cannot withdraw funds.</li>
-				<li>You can pause it at any time.</li>
-			</ul>
-			<Button
-				variant="filled"
-				intent="brand"
-				size="md"
-				className="w-full"
-				onClick={() => window.location.assign(SETUP_URL)}
-			>
-				Set up Auto Trader
-			</Button>
-		</div>
-	);
 }
 
 function useNow(active: boolean) {
@@ -96,7 +69,7 @@ function AutoControls({ auto }: { auto: ReturnType<typeof useAutoTrader> }) {
 				<InfoRow
 					label="Markets"
 					value={
-						<a href={SETUP_URL} className="inline-flex items-center gap-1 transition-colors hover:text-brand">
+						<a href={SETTINGS_URL} className="inline-flex items-center gap-1 transition-colors hover:text-brand">
 							{auto.markets.length}
 							<ArrowUpRightIcon className="size-3 text-fg-muted" />
 						</a>
