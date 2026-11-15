@@ -88,7 +88,7 @@ function AutoControls({ auto }: { auto: ReturnType<typeof useAutoTrader> }) {
 				equity={formatUSD(plan?.equity)}
 				dayPnl={formatUSD(plan?.dayPnl, { signDisplay: "exceptZero" })}
 				dayUp={plan?.dayPnl ? plan.dayPnl >= 0 : null}
-				markets={auto.markets.length}
+				markets={auto.markets}
 				actionLabel={trading ? "Pause" : "Start"}
 				busy={auto.pending === "start" || auto.pending === "pause"}
 				disabled={busy || auto.phase === "closing"}

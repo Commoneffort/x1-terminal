@@ -1,5 +1,6 @@
-import { PauseIcon, PlayIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, PauseIcon, PlayIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
+import { AutoIconStack } from "./auto-icon-stack";
 
 interface Props {
 	on: boolean;
@@ -8,7 +9,7 @@ interface Props {
 	equity: string;
 	dayPnl: string;
 	dayUp: boolean | null;
-	markets: number;
+	markets: string[];
 	actionLabel: string;
 	busy: boolean;
 	disabled: boolean;
@@ -65,17 +66,20 @@ export function AutoStatusCard({
 					value={dayPnl}
 					className={dayUp === null ? undefined : dayUp ? "text-market-up" : "text-market-down"}
 				/>
-				<button
-					type="button"
-					onClick={onMarkets}
-					className="-m-1.5 flex flex-col gap-0.5 rounded-8 p-1.5 text-left transition-colors hover:bg-control-hover"
-				>
-					<span className="text-2xs text-fg-muted">Markets</span>
-					<span className="tabular-nums underline decoration-fg-disabled decoration-dotted underline-offset-2">
-						{markets} · Edit
-					</span>
-				</button>
 			</div>
+			<button
+				type="button"
+				onClick={onMarkets}
+				className="-mx-2 -mb-2 flex items-center gap-3 rounded-8 px-2 py-2 text-left transition-colors hover:bg-control-hover"
+			>
+				<AutoIconStack coins={markets} max={5} />
+				<span className="flex-1 text-xs text-fg-secondary">
+					{on ? "Trading " : ""}
+					<span className="text-fg">{markets.length} markets</span>
+					{on ? "" : " selected"}
+				</span>
+				<CaretRightIcon weight="bold" className="size-3 text-fg-muted" />
+			</button>
 		</div>
 	);
 }
