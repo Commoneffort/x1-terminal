@@ -23,7 +23,7 @@ export function TradeModeSwitch({ mode }: Props) {
 						type="button"
 						onClick={() => setTradeMode(m)}
 						className={cn(
-							"flex h-10 flex-1 items-center justify-center gap-2 rounded-t-8 text-sm transition-colors",
+							"flex h-9 flex-1 items-center justify-center gap-1.5 rounded-t-8 text-xs transition-colors",
 							on ? "bg-surface font-medium text-fg" : "text-fg-muted hover:text-fg",
 						)}
 					>
