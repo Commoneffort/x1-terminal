@@ -4,6 +4,7 @@ import { zeroAddress } from "viem";
 import { useConnection } from "wagmi";
 import { AUTO_TRADER_BUILDER, AUTO_TRADER_MIN_EQUITY } from "@/config/auto-trader";
 import { useTradingAccount } from "@/hooks/use-trading-account";
+import { demoSetContext, isDemoSession } from "@/lib/auto-trader/demo-sim";
 import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
 import { useAutoTraderMutation, useAutoTraderSignal, useAutoTraderStatus } from "@/lib/auto-trader/hooks";
 import { autoTraderPhase } from "@/lib/auto-trader/phase";
@@ -22,7 +23,7 @@ export function useAutoTrader() {
 	const status = useAutoTraderStatus(master, available);
 	const signal = useAutoTraderSignal(available);
 	const control = useAutoTraderMutation(master);
-	const lazy = { enabled: false };
+	const lazy = { enabled: available && isDemoSession() };
 	const agents = useInfo("extraAgents", { user: owner ?? zeroAddress }, lazy);
 	const fee = useInfo("maxBuilderFee", { user: owner ?? zeroAddress, builder: AUTO_TRADER_BUILDER }, lazy);
 	const main = useInfo("clearinghouseState", { user: master }, lazy);
@@ -74,11 +75,18 @@ export function useAutoTrader() {
 		}
 	}
 
+	function prepareDemo() {
+		const equity =
+			accountEquity(mode.data, main.data, xyz.data, spot.data) ?? Number(main.data?.marginSummary.accountValue ?? 0);
+		demoSetContext(master, equity, signal.data?.coins ?? []);
+	}
+
 	function start() {
 		return run(
 			"start",
 			async () => {
-				await verifyReady();
+				if (isDemoSession()) prepareDemo();
+				else await verifyReady();
 				await control.mutateAsync({ action: "resume", body: {} });
 			},
 			"Auto Trader started.",
@@ -101,6 +109,7 @@ export function useAutoTrader() {
 	}
 
 	return {
+		demo: isDemoSession(),
 		available,
 		env,
 		phase,

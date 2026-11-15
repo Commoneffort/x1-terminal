@@ -223,7 +223,7 @@ interface WalletLabelProps {
 }
 
 function WalletLabel({ connector, demo, name }: WalletLabelProps) {
-	if (demo) return null;
+	if (demo) return <span className="rounded-4 bg-control-hover px-1.5 py-0.5 text-2xs text-fg-secondary">Demo</span>;
 	return (
 		<>
 			<WalletLogo connector={connector} size={18} />

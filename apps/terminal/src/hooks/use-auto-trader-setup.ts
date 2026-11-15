@@ -12,6 +12,7 @@ import {
 import { BUILDER_CONFIGURED, DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { useTradingAccount } from "@/hooks/use-trading-account";
 import { sealAgentKey } from "@/lib/auto-trader/api";
+import { demoAction, demoApproveFee, demoFeeApproved, isDemoSession } from "@/lib/auto-trader/demo-sim";
 import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
 import { useAutoTraderMutation, useAutoTraderStatus } from "@/lib/auto-trader/hooks";
 import { accountEquity } from "@/lib/auto-trader/targets";
@@ -57,7 +58,9 @@ export function useAutoTraderSetup() {
 	);
 
 	const configured = BUILDER_CONFIGURED && DEFAULT_BUILDER_CONFIG?.b.toLowerCase() === AUTO_TRADER_BUILDER;
-	const feeDone = fee.data !== undefined && fee.data >= 50;
+	const demo = isDemoSession();
+	const [demoFee, setDemoFee] = useState(() => demo && demoFeeApproved(master));
+	const feeDone = demoFee || (fee.data !== undefined && fee.data >= 50);
 	const balancesError = main.isError || xyz.isError || spot.isError || mode.isError;
 	const equity = balancesError ? null : accountEquity(mode.data, main.data, xyz.data, spot.data);
 	const fundsDone = equity !== null && equity >= AUTO_TRADER_MIN_EQUITY;
@@ -92,6 +95,11 @@ export function useAutoTraderSetup() {
 		return run(
 			"fee",
 			async (progress) => {
+				if (demo) {
+					demoApproveFee(master);
+					setDemoFee(true);
+					return;
+				}
 				progress("Confirm the fee approval in your wallet.");
 				await approveFee.mutateAsync({ builder: AUTO_TRADER_BUILDER, maxFeeRate: "0.05%" });
 				const checked = await fee.refetch();
@@ -129,6 +137,11 @@ export function useAutoTraderSetup() {
 		return run(
 			"key",
 			async (progress) => {
+				if (demo) {
+					demoAction(master, "register", status.data?.settings ?? AUTO_TRADER_DEFAULTS);
+					await status.refetch();
+					return;
+				}
 				const fresh = await ensureAgent(progress);
 				progress("Signature 2 of 2: register the key with Auto Trader.");
 				const settings = {

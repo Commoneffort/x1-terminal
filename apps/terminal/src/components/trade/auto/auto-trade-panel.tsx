@@ -21,8 +21,16 @@ export function AutoTradePanel() {
 	if (!auto.available) return <AutoNote text="Connect a wallet to use Auto Trader." />;
 	if (auto.loading) return <AutoNote text="Loading Auto Trader…" />;
 	if (auto.statusError && !auto.status) return <AutoNote text="Auto Trader status is unavailable. Try again soon." />;
-	if (auto.phase === "setup") return <AutoSetup />;
-	return <AutoControls auto={auto} />;
+	const body = auto.phase === "setup" ? <AutoSetup /> : <AutoControls auto={auto} />;
+	if (!auto.demo) return body;
+	return (
+		<>
+			<p className="px-3 pt-3 text-xs text-fg-muted">
+				Demo account. Auto Trader actions are simulated and sign nothing.
+			</p>
+			{body}
+		</>
+	);
 }
 
 function AutoNote({ text }: { text: string }) {
