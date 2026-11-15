@@ -70,7 +70,7 @@ export function AutoStatusCard({
 			<button
 				type="button"
 				onClick={onMarkets}
-				className="-mx-2 -mb-2 flex items-center gap-3 rounded-8 px-2 py-2 text-left transition-colors hover:bg-control-hover"
+				className="group -mx-2 -mb-2 flex items-center gap-3 rounded-8 px-2 py-2 text-left transition-colors hover:bg-control-hover"
 			>
 				<AutoIconStack coins={markets} max={5} />
 				<span className="flex-1 text-xs text-fg-secondary">
