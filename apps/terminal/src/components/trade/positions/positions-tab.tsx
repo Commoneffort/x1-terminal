@@ -20,6 +20,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useSubmitPlan } from "@/hooks/trade/use-submit-plan";
+import { useAutoManaged } from "@/hooks/use-auto-managed";
 import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -76,6 +77,7 @@ const SORT_FIELDS: Record<string, readonly { label: string; key: PositionSortKey
 
 export function PositionsTab() {
 	const { address, isConnected } = useTradingAccount();
+	const auto = useAutoManaged();
 	const slippageBps = useMarketOrderSlippageBps();
 	const currentAddress = useRef(address);
 	currentAddress.current = address;
@@ -325,6 +327,7 @@ export function PositionsTab() {
 											markets={markets}
 											markPx={mids?.[p.coin]}
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
+											autoManaged={auto.isManaged(p.coin)}
 											isRowClosing={closingAll || (typeof assetId === "number" && closingAssetIds.has(assetId))}
 											onClose={handleClosePosition}
 											onLimitClose={handleOpenLimitCloseModal}

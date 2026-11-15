@@ -24,8 +24,8 @@ export const PHASE_LABEL: Record<AutoTraderPhase, string> = {
 export type PhaseTone = "on" | "off" | "alert";
 
 export function phaseTone(phase: AutoTraderPhase): PhaseTone {
-	if (phase === "active" || phase === "waiting") return "on";
-	if (phase === "closing" || phase === "stopped") return "alert";
+	if (phase === "active" || phase === "waiting" || phase === "closing") return "on";
+	if (phase === "stopped") return "alert";
 	return "off";
 }
 

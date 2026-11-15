@@ -10,6 +10,7 @@ export interface PositionRowProps {
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
+	autoManaged?: boolean;
 	onClose: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onReverse: (data: ClosePositionData) => void;

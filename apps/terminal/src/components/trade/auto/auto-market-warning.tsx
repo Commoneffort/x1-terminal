@@ -15,22 +15,25 @@ export function AutoMarketWarning({ coin, label, isPerp }: Props) {
 	const settings = auto.settings;
 	const busy = auto.pending === "settings";
 	return (
-		<div className="flex gap-2.5 rounded-8 bg-warning-soft p-2.5 text-xs">
-			<RobotIcon className="mt-0.5 size-4 shrink-0 text-warning" />
-			<div className="flex min-w-0 flex-col gap-1.5">
-				<p className="text-fg-secondary">
-					Auto Trader manages {label}. Its next cycle resizes any {label} position you open here.
-				</p>
+		<div className="flex flex-col gap-1">
+			<div className="flex items-center justify-between gap-3 text-xs">
+				<span
+					className="inline-flex min-w-0 items-center gap-1.5 text-fg-muted"
+					title={`Auto Trader resizes ${label} positions every cycle, including positions you open here.`}
+				>
+					<RobotIcon className="size-3.5 shrink-0" />
+					<span className="truncate">Auto Trader also trades {label}</span>
+				</span>
 				<button
 					type="button"
 					disabled={busy}
 					onClick={() => void auto.saveSettings(withoutMarket(settings, auto.universe, coin))}
-					className="self-start font-medium text-warning transition-opacity hover:opacity-80 disabled:opacity-50"
+					className="shrink-0 text-fg-secondary transition-colors hover:text-fg disabled:opacity-50"
 				>
-					{busy ? "Confirm in wallet…" : `Remove ${label} from Auto`}
+					{busy ? "Confirm in wallet…" : "Exclude"}
 				</button>
-				{auto.error && <p className="text-market-down">{auto.error}</p>}
 			</div>
+			{auto.error && <p className="text-xs text-market-down">{auto.error}</p>}
 		</div>
 	);
 }

@@ -58,6 +58,9 @@ export function PositionRow(props: PositionRowProps) {
 					>
 						{p.leverage.value}×
 					</span>
+					{props.autoManaged && (
+						<span className="rounded-4 bg-control px-1.5 py-0.5 text-2xs text-fg-secondary">Auto</span>
+					)}
 				</button>
 			</TableCell>
 			<TableCell className={num}>
