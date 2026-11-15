@@ -19,6 +19,7 @@ afterEach(()=>{useTradingAccountStore.getState().select(null);state.mutating=0;s
 it("selects the owner's subaccount from the top-right menu and returns to main",async()=>{
  const host=document.createElement("div");document.body.append(host);const root=createRoot(host);await act(async()=>root.render(<UserMenu />));
  expect(host.textContent).not.toContain("Other owner");
+ expect(host.querySelector("[data-trigger] svg")).not.toBeNull();
  await act(async()=>[...host.querySelectorAll("button")].find(b=>b.textContent?.includes("Ledger bot"))!.click());
  expect(host.querySelector('[data-trigger]')?.textContent).toContain("Ledger bot");expect(useTradingAccountStore.getState().selection?.address).toBe(state.sub);expect(state.reset).toHaveBeenCalledOnce();
  await act(async()=>[...host.querySelectorAll("button")].find(b=>b.textContent?.includes("Main account"))!.click());expect(useTradingAccountStore.getState().selection).toBeNull();expect(host.querySelector('[data-trigger]')?.textContent).toContain("Rabby");

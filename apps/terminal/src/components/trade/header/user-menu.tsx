@@ -27,10 +27,10 @@ import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useTradingAccountStore } from "@/stores/use-trading-account-store";
 import { AccountModeControl } from "../components/account-mode-control";
 import { ExportKeyModal } from "../components/export-key-modal";
+import { WalletLogo } from "../components/wallet-logo";
 import { WalletModal } from "../components/wallet-modal";
 import { XntMark } from "../rewards/xnt-mark";
 import { XntRewardsDrawer } from "../rewards/xnt-rewards-drawer";
-import { X1Tile } from "./x1-terminal-logo";
 
 export function UserMenu() {
 	const { address, isConnected, connector } = useConnection();
@@ -167,7 +167,7 @@ export function UserMenu() {
 				triggerClassName="tabular-nums max-md:h-8 max-md:px-2.5 max-md:[&>svg:last-child]:hidden"
 				trigger={
 					<span className="inline-flex max-w-56 items-center gap-2 whitespace-nowrap">
-						<WalletLabel derived={derived} demo={demo} name={active.subaccount?.name ?? walletName} />
+						<WalletLabel connector={connector} demo={demo} name={active.subaccount?.name} />
 						<span>
 							{activeAddress.slice(0, 4)}
 							<span className="max-md:hidden">{activeAddress.slice(4, 6)}</span>…{activeAddress.slice(-4)}
@@ -217,15 +217,19 @@ function getWalletName(derived: boolean, connector: { id: string; name: string }
 }
 
 interface WalletLabelProps {
-	derived: boolean;
+	connector: { id: string; icon?: string } | undefined;
 	demo: boolean;
-	name: string;
+	name: string | undefined;
 }
 
-function WalletLabel({ derived, demo, name }: WalletLabelProps) {
+function WalletLabel({ connector, demo, name }: WalletLabelProps) {
 	if (demo) return null;
-	if (derived && name === "X1") return <X1Tile size={18} />;
-	return <span className="truncate text-fg-muted max-md:hidden">{name}</span>;
+	return (
+		<>
+			<WalletLogo connector={connector} size={18} />
+			{name && <span className="truncate text-fg-muted max-md:hidden">{name}</span>}
+		</>
+	);
 }
 
 function getAccountLabel(derived: boolean, demo: boolean, walletName: string) {
