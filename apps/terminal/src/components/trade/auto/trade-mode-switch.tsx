@@ -1,30 +1,46 @@
-import { SegmentedControlItem, SegmentedControls } from "@hypeterminal/ui";
 import { useAutoTrader } from "@/hooks/use-auto-trader";
-import { phaseTone } from "@/lib/auto-trader/phase";
+import { isTrading } from "@/lib/auto-trader/phase";
+import { cn } from "@/lib/cn";
 import { setTradeMode, type TradeMode } from "@/stores/use-trade-mode-store";
-import { AutoStatusDot } from "./auto-status-dot";
 
 interface Props {
 	mode: TradeMode;
 }
 
+type Phase = "active" | "paused" | null;
+
 export function TradeModeSwitch({ mode }: Props) {
 	const auto = useAutoTrader();
-	const tone = auto.available && auto.phase !== "setup" ? phaseTone(auto.phase) : null;
-	function handleChange(value: string) {
-		if (value === "manual" || value === "auto") setTradeMode(value);
-	}
+	let phase: Phase = null;
+	if (auto.available && auto.phase !== "setup") phase = isTrading(auto.phase) ? "active" : "paused";
 	return (
-		<div className="px-3 pt-3">
-			<SegmentedControls value={mode} onValueChange={handleChange} fullWidth>
-				<SegmentedControlItem value="manual">Manual</SegmentedControlItem>
-				<SegmentedControlItem value="auto">
-					<span className="inline-flex items-center gap-1.5">
-						{tone && <AutoStatusDot tone={tone} />}
-						Auto
-					</span>
-				</SegmentedControlItem>
-			</SegmentedControls>
+		<div className="flex bg-background">
+			{(["manual", "auto"] as const).map((m) => {
+				const on = mode === m;
+				return (
+					<button
+						key={m}
+						type="button"
+						onClick={() => setTradeMode(m)}
+						className={cn(
+							"flex h-10 flex-1 items-center justify-center gap-2 rounded-t-8 text-sm transition-colors",
+							on ? "bg-surface font-medium text-fg" : "text-fg-muted hover:text-fg",
+						)}
+					>
+						{m === "manual" ? "Manual" : "Auto"}
+						{m === "auto" && phase && (
+							<span
+								className={cn(
+									"rounded-full px-1.5 py-px text-2xs",
+									phase === "active" ? "bg-success-soft text-market-up" : "bg-control text-fg-muted",
+								)}
+							>
+								{phase === "active" ? "Live" : "Paused"}
+							</span>
+						)}
+					</button>
+				);
+			})}
 		</div>
 	);
 }
