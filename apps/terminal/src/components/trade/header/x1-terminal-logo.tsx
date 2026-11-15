@@ -1,5 +1,4 @@
 import { type CSSProperties, useId } from "react";
-import { WORD_HEIGHT, WORD_PATH, WORD_WIDTH } from "@/lib/brand/x1-logo-paths";
 
 export function X1Mark({ className, style }: { className?: string; style?: CSSProperties }) {
 	const gradientId = `x1-one-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
@@ -47,16 +46,12 @@ export default function X1TerminalLogo() {
 	return (
 		<span role="img" aria-label="X1 Terminal" className="inline-flex shrink-0 items-center gap-[9px] select-none">
 			<X1Tile size={26} />
-			<svg
-				viewBox={`0 0 ${WORD_WIDTH} ${WORD_HEIGHT}`}
-				width={WORD_WIDTH}
-				height={WORD_HEIGHT}
-				fill="currentColor"
+			<span
 				aria-hidden="true"
-				className="block shrink-0 text-fg"
+				className="font-wordmark text-wordmark leading-none font-semibold whitespace-nowrap text-fg"
 			>
-				<path d={WORD_PATH} />
-			</svg>
+				Terminal
+			</span>
 		</span>
 	);
 }

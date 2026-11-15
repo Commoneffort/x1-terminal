@@ -5,6 +5,14 @@
 @import "@hypeterminal/ui/globals.css";
 @source "../../../packages/ui/src";
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ============================================
    HyperTerminal UI — Design Tokens
    Source: Figma variable exports
@@ -21,6 +29,8 @@
   /* ---- Font Families ---- */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, "SF Mono", monospace;
+  --font-wordmark: "Geist", var(--font-sans);
+  --text-wordmark: 14.5px;
 
   /* ---- Typography Scale (docs/design-system.md §2) ----
      11/16 → text-2xs  (uppercase micro-labels only, with tracking-micro)
