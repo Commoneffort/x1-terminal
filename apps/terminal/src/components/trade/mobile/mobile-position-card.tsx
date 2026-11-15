@@ -24,6 +24,7 @@ interface Props {
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
+	autoManaged?: boolean;
 	closeErrorMessage: string | null;
 	onClose: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
@@ -37,6 +38,7 @@ export function MobilePositionCard({
 	markPx: markPxRaw,
 	tpSlInfo,
 	isRowClosing,
+	autoManaged,
 	closeErrorMessage,
 	onClose,
 	onLimitClose,
@@ -142,6 +144,7 @@ export function MobilePositionCard({
 						nameClassName="text-base font-medium text-fg"
 					/>
 					<span className={cn("text-xs font-medium", sideClass)}>{isLong ? t`Long` : t`Short`}</span>
+					{autoManaged && <span className="rounded-4 bg-control px-1.5 py-0.5 text-2xs text-fg-secondary">Auto</span>}
 				</div>
 				<div className="flex items-center gap-1">
 					<span className={cn("text-xs font-medium tabular-nums", pnlClass)}>

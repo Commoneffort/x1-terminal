@@ -10,10 +10,11 @@ interface Props {
 	activeTab: MobileTab;
 	onTabChange: (tab: MobileTab) => void;
 	badges?: Partial<Record<MobileTab, number>>;
+	dots?: Partial<Record<MobileTab, boolean>>;
 	className?: string;
 }
 
-export function MobileBottomNav({ activeTab, onTabChange, badges, className }: Props) {
+export function MobileBottomNav({ activeTab, onTabChange, badges, dots, className }: Props) {
 	return (
 		<nav
 			className={cn(
@@ -58,6 +59,9 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 									>
 										{badgeCount > NAV_BADGE_MAX_COUNT ? `${NAV_BADGE_MAX_COUNT}+` : badgeCount}
 									</span>
+								)}
+								{!showBadge && dots?.[item.id] && (
+									<span className="absolute -top-0.5 -right-1 size-2 rounded-full bg-market-up ring-2 ring-surface" />
 								)}
 							</span>
 							<span>{item.label}</span>

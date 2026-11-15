@@ -1,8 +1,8 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
 import { t } from "@lingui/core/macro";
 import { Skeleton } from "boneyard-js/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";

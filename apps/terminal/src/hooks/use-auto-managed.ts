@@ -16,6 +16,7 @@ export function useAutoManaged() {
 	const active = available && isTrading(phase);
 	return {
 		registered: available && phase !== "setup",
+		live: active,
 		isManaged: (coin: string) => active && managesMarket(settings, universe, coin),
 	};
 }

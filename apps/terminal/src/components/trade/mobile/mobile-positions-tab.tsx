@@ -1,4 +1,3 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
 import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { TrendUpIcon } from "@phosphor-icons/react";
@@ -8,6 +7,8 @@ import { toast } from "sonner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useSubmitPlan } from "@/hooks/trade/use-submit-plan";
+import { useAutoManaged } from "@/hooks/use-auto-managed";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
@@ -23,6 +24,7 @@ import { MobilePositionCard } from "./mobile-position-card";
 
 export function MobilePositionsTab() {
 	const { address, isConnected } = useTradingAccount();
+	const auto = useAutoManaged();
 	const slippageBps = useMarketOrderSlippageBps();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
@@ -168,6 +170,7 @@ export function MobilePositionsTab() {
 								position={p}
 								markets={markets}
 								markPx={mids?.[p.coin]}
+								autoManaged={auto.isManaged(p.coin)}
 								tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 								isRowClosing={isRowClosing}
 								closeErrorMessage={closeErrorMessage}

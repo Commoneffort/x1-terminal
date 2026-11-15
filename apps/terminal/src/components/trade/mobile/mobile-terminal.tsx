@@ -1,4 +1,5 @@
 import { HL_ALL_DEXS } from "@/config/app";
+import { useAutoManaged } from "@/hooks/use-auto-managed";
 import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -22,6 +23,7 @@ export function MobileTerminal({ className }: Props) {
 	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const { address, isConnected } = useTradingAccount();
 	const { positions } = useUserPositions();
+	const auto = useAutoManaged();
 
 	const { data: ordersEvent } = useSubscription(
 		"openOrders",
@@ -50,6 +52,7 @@ export function MobileTerminal({ className }: Props) {
 				activeTab={activeTab}
 				onTabChange={setMobileActiveTab}
 				badges={{ positions: positionsCount + ordersCount }}
+				dots={{ trade: auto.live }}
 			/>
 		</div>
 	);
