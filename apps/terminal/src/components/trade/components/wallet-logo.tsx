@@ -1,5 +1,9 @@
 import { RabbyIcon } from "@/components/icons/rabby-icon";
-import { X1Tile } from "../header/x1-terminal-logo";
+
+const WALLET_ICONS: Record<string, string> = {
+	x1: "/wallets/x1-wallet.svg",
+	phantom: "/wallets/phantom.svg",
+};
 
 interface Props {
 	connector: { id: string; icon?: string } | undefined;
@@ -9,14 +13,13 @@ interface Props {
 export function WalletLogo({ connector, size }: Props) {
 	if (!connector) return null;
 	const radius = Math.round(size * 0.26);
-	if (connector.id === "x1") return <X1Tile size={size} />;
 	if (connector.id === "rabby")
 		return (
 			<span className="block shrink-0 overflow-hidden" style={{ width: size, height: size, borderRadius: radius }}>
 				<RabbyIcon className="block size-full" />
 			</span>
 		);
-	const src = connector.id === "phantom" ? "/wallets/phantom.svg" : connector.icon;
+	const src = WALLET_ICONS[connector.id] ?? connector.icon;
 	if (!src) return null;
 	return (
 		<img

@@ -1,8 +1,7 @@
 import { Button, Modal, ModalContent, ModalPopup } from "@hypeterminal/ui";
 import { useId, useState } from "react";
 import { useConnect, useConnectors } from "wagmi";
-import { RabbyIcon } from "@/components/icons/rabby-icon";
-import { X1Tile } from "../header/x1-terminal-logo";
+import { WalletLogo } from "./wallet-logo";
 
 interface Props {
 	open: boolean;
@@ -69,18 +68,7 @@ export function WalletModal({ open, onOpenChange, embedded = false }: Props) {
 						onClick={() => handleSelect(c)}
 					>
 						<span className="shrink-0 group-disabled:opacity-50">
-							{c.id === "x1" ? (
-								<X1Tile size={36} />
-							) : c.id === "rabby" ? (
-								<RabbyIcon className="block size-9 rounded-[9px]" />
-							) : (
-								<img
-									src="/wallets/phantom.svg"
-									alt=""
-									draggable={false}
-									className="block size-9 rounded-[9px] object-contain"
-								/>
-							)}
+							<WalletLogo connector={c} size={36} />
 						</span>
 						<span className="flex min-w-0 flex-col gap-0.5">
 							<span className="text-sm font-medium text-fg group-disabled:text-fg-disabled">{c.name}</span>
