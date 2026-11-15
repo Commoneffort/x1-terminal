@@ -1,10 +1,12 @@
 import { Button } from "@hypeterminal/ui";
 import { CheckIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import { useState } from "react";
 import { AUTO_TRADER_MIN_EQUITY } from "@/config/auto-trader";
 import { type SetupStep, useAutoTraderSetup } from "@/hooks/use-auto-trader-setup";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
+import { AutoExistingWallet } from "./auto-existing-wallet";
 
 interface StepProps {
 	n: number;
@@ -37,6 +39,7 @@ function Step({ n, done, current, title, detail }: StepProps) {
 
 export function AutoSetup() {
 	const setup = useAutoTraderSetup();
+	const [existing, setExisting] = useState(false);
 	const { open: openDeposit } = useDepositModalActions();
 	const spinner = (step: SetupStep) =>
 		setup.busy === step ? <SpinnerGapIcon className="size-4 animate-spin" /> : undefined;
@@ -79,17 +82,30 @@ export function AutoSetup() {
 					detail="Two wallet signatures. The key can trade but cannot withdraw. Auto Trader starts paused."
 				/>
 			</ol>
-			<Button
-				variant="filled"
-				intent="brand"
-				size="md"
-				className="w-full"
-				onClick={action.run}
-				disabled={setup.busy !== null || (action.needsBuilder && !setup.configured)}
-				iconLeft={spinner(setup.current)}
-			>
-				{action.label}
-			</Button>
+			{existing && setup.current === "key" ? (
+				<AutoExistingWallet setup={setup} onCancel={() => setExisting(false)} />
+			) : (
+				<Button
+					variant="filled"
+					intent="brand"
+					size="md"
+					className="w-full"
+					onClick={action.run}
+					disabled={setup.busy !== null || (action.needsBuilder && !setup.configured)}
+					iconLeft={spinner(setup.current)}
+				>
+					{action.label}
+				</Button>
+			)}
+			{!existing && setup.current === "key" && (
+				<button
+					type="button"
+					onClick={() => setExisting(true)}
+					className="self-center text-xs text-fg-secondary transition-colors hover:text-fg"
+				>
+					Use an existing API wallet
+				</button>
+			)}
 			{!setup.configured && (
 				<p className="text-xs text-market-down">This terminal's builder does not match the Auto Trader service.</p>
 			)}

@@ -16,7 +16,7 @@ import { demoAction, demoApproveFee, demoFeeApproved, isDemoSession } from "@/li
 import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
 import { useAutoTraderMutation, useAutoTraderStatus } from "@/lib/auto-trader/hooks";
 import { accountEquity } from "@/lib/auto-trader/targets";
-import { useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import { readAgentFromStorage, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 
 const KEY_DAYS = 90;
 const DAY_MS = 86_400_000;
@@ -165,7 +165,54 @@ export function useAutoTraderSetup() {
 		);
 	}
 
+	function registerExisting(agent: Address, typedKey: string) {
+		return run(
+			"key",
+			async (progress) => {
+				if (demo) {
+					demoAction(master, "register", status.data?.settings ?? AUTO_TRADER_DEFAULTS);
+					await status.refetch();
+					return;
+				}
+				const list = await agents.refetch();
+				const row = list.data?.find((r) => r.address.toLowerCase() === agent.toLowerCase());
+				if (!row || row.validUntil <= Date.now()) throw new Error("Select an API wallet that has not expired.");
+				const stored = owner ? readAgentFromStorage(env, owner) : null;
+				const key = (
+					stored?.publicKey.toLowerCase() === agent.toLowerCase() ? stored.privateKey : typedKey.trim()
+				) as Hex;
+				if (!/^0x[\da-f]{64}$/i.test(key) || privateKeyToAccount(key).address.toLowerCase() !== agent.toLowerCase())
+					throw new Error("Enter the private key of the selected API wallet.");
+				progress("Register the key with Auto Trader.");
+				await control.mutateAsync({
+					action: "register",
+					body: (serverKey: string) => ({
+						master,
+						agent: row.address,
+						sealedKey: sealAgentKey(key, serverKey),
+						settings: {
+							...(status.data?.settings ?? AUTO_TRADER_DEFAULTS),
+							exclude: status.data?.settings?.exclude ?? [],
+						},
+					}),
+				});
+				await status.refetch();
+			},
+			"Auto Trader is set up with your API wallet. It is paused until you start it.",
+		);
+	}
+
+	function hasLocalKey(agent: string) {
+		const stored = owner ? readAgentFromStorage(env, owner) : null;
+		return stored?.publicKey.toLowerCase() === agent.toLowerCase();
+	}
+
+	const apiWallets = (agents.data ?? []).filter((row) => row.validUntil > Date.now());
+
 	return {
+		apiWallets,
+		hasLocalKey,
+		registerExisting,
 		configured,
 		current,
 		feeDone,

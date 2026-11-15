@@ -11,20 +11,26 @@ interface Props {
 }
 
 const LEVERAGE_MARKS = [1, 2, 3, 4, 5] as const;
+const DEFAULT_FLOW = 40;
 
 export function AutoSettingsForm({ saved, saving, disabled, onSave }: Props) {
 	const [leverage, setLeverage] = useState(saved.leverage);
 	const [stop, setStop] = useState(String(Number((saved.killPct * 100).toFixed(2))));
 	const [minOrder, setMinOrder] = useState(String(saved.minOrderUsd));
-	const next = { ...saved, leverage, killPct: Number(stop) / 100, minOrderUsd: Number(minOrder) };
+	const [flow, setFlow] = useState(saved.flowPct ?? DEFAULT_FLOW);
+	const next = { ...saved, leverage, killPct: Number(stop) / 100, minOrderUsd: Number(minOrder), flowPct: flow };
 	const changed =
-		next.leverage !== saved.leverage || next.killPct !== saved.killPct || next.minOrderUsd !== saved.minOrderUsd;
+		next.leverage !== saved.leverage ||
+		next.killPct !== saved.killPct ||
+		next.minOrderUsd !== saved.minOrderUsd ||
+		flow !== (saved.flowPct ?? DEFAULT_FLOW);
 	const valid = next.killPct > 0 && next.killPct <= 0.5 && next.minOrderUsd >= 10;
 
 	function reset() {
 		setLeverage(saved.leverage);
 		setStop(String(Number((saved.killPct * 100).toFixed(2))));
 		setMinOrder(String(saved.minOrderUsd));
+		setFlow(saved.flowPct ?? DEFAULT_FLOW);
 	}
 
 	return (
@@ -63,6 +69,34 @@ export function AutoSettingsForm({ saved, saving, disabled, onSave }: Props) {
 				disabled={disabled}
 				invalid={next.minOrderUsd < 10}
 			/>
+			<div className="flex flex-col gap-2">
+				<div className="flex items-center justify-between text-xs">
+					<span className="text-fg-muted">Signal blend</span>
+					<span className="tabular-nums">
+						Positions {100 - flow}% · 6h flow {flow}%
+					</span>
+				</div>
+				<Slider
+					value={flow}
+					onValueChange={(v) => setFlow(Array.isArray(v) ? v[0] : v)}
+					min={0}
+					max={40}
+					step={1}
+					disabled={disabled}
+					aria-label="Signal blend: six-hour flow weight"
+				/>
+				<div className="flex items-center justify-between text-2xs text-fg-muted">
+					<span>Positions only</span>
+					<button
+						type="button"
+						disabled={disabled || flow === DEFAULT_FLOW}
+						onClick={() => setFlow(DEFAULT_FLOW)}
+						className="transition-colors hover:text-fg disabled:opacity-50"
+					>
+						Reset to 60 / 40
+					</button>
+				</div>
+			</div>
 			{changed && (
 				<div className="grid grid-cols-2 gap-2">
 					<Button variant="secondary" intent="neutral" size="sm" onClick={reset} disabled={saving}>

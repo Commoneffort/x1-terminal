@@ -3,21 +3,25 @@ import { toast } from "sonner";
 import { zeroAddress } from "viem";
 import { useConnection } from "wagmi";
 import { AUTO_TRADER_BUILDER, AUTO_TRADER_MIN_EQUITY } from "@/config/auto-trader";
+import { useSubmitPlan } from "@/hooks/trade/use-submit-plan";
 import { useTradingAccount } from "@/hooks/use-trading-account";
+import { closeNow } from "@/lib/auto-trader/close-now";
 import { demoSetContext, isDemoSession } from "@/lib/auto-trader/demo-sim";
 import { autoTraderErrorMessage } from "@/lib/auto-trader/error-message";
 import { useAutoTraderMutation, useAutoTraderSignal, useAutoTraderStatus } from "@/lib/auto-trader/hooks";
 import { autoTraderPhase } from "@/lib/auto-trader/phase";
 import { accountEquity, allowedMarkets, validateSettings } from "@/lib/auto-trader/targets";
 import type { AutoTraderSettings } from "@/lib/auto-trader/types";
-import { useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import { useAgentWallet, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 
-type Op = "start" | "pause" | "settings";
+type Op = "start" | "pause" | "settings" | "flatten" | "remove";
 
 export function useAutoTrader() {
 	const { address: owner } = useConnection();
 	const { address, isConnected } = useTradingAccount();
-	const { env } = useHyperliquid();
+	const { env, info } = useHyperliquid();
+	const { submitPlan } = useSubmitPlan();
+	const tradingAgent = useAgentWallet();
 	const master = address ?? zeroAddress;
 	const available = env === "Mainnet" && isConnected && !!address;
 	const status = useAutoTraderStatus(master, available);
@@ -62,14 +66,16 @@ export function useAutoTrader() {
 	}
 
 	async function run(op: Op, job: () => Promise<unknown>, done: string) {
-		if (pending) return;
+		if (pending) return false;
 		setPending(op);
 		try {
 			await job();
 			await status.refetch();
 			toast.success(done);
+			return true;
 		} catch (e) {
 			toast.error(autoTraderErrorMessage(e));
+			return false;
 		} finally {
 			setPending(null);
 		}
@@ -97,6 +103,36 @@ export function useAutoTrader() {
 		return run("pause", () => control.mutateAsync({ action: "pause", body: {} }), "Auto Trader paused.");
 	}
 
+	function flatten() {
+		return run(
+			"flatten",
+			async () => {
+				if (isDemoSession()) {
+					await control.mutateAsync({ action: "pause", body: {} });
+					return;
+				}
+				if (!tradingAgent.isReady) {
+					window.dispatchEvent(new Event("x1:setup"));
+					throw new Error("Enable trading first, then close the positions.");
+				}
+				await control.mutateAsync({ action: "pause", body: {} });
+				const paused = await status.refetch();
+				if (paused.isError || paused.data?.state !== "paused")
+					throw new Error("Could not confirm Auto Trader is paused. No close orders were sent.");
+				await closeNow({ info, master, check: () => {}, submit: submitPlan });
+			},
+			"Auto Trader paused. Close orders sent for all perp positions.",
+		);
+	}
+
+	function remove() {
+		return run(
+			"remove",
+			() => control.mutateAsync({ action: "remove", body: {} }),
+			"Auto Trader removed. Positions stay open.",
+		);
+	}
+
 	function saveSettings(next: AutoTraderSettings) {
 		return run(
 			"settings",
@@ -118,10 +154,13 @@ export function useAutoTrader() {
 		statusError: status.isError,
 		settings,
 		universe,
+		signal: signal.data,
 		markets,
 		pending,
 		start,
 		pause,
+		flatten,
+		remove,
 		saveSettings,
 	};
 }

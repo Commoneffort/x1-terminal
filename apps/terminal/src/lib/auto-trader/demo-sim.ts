@@ -123,6 +123,9 @@ export function demoAction(master: string, action: AutoTraderAction, settings?: 
 				dayStart: row.equity,
 				dayPnl: 0,
 				killed: false,
+				agentApproved: true,
+				builderFeeOk: true,
+				signalTs: Date.now(),
 				rows: planRows(status.settings, row.equity, row.coins),
 				fills: [],
 			};
