@@ -53,22 +53,24 @@ export function TopNav() {
 							</Link>
 						);
 					})}
-					<Divider orientation="vertical" className="mx-2 h-4 self-center" />
-					{STATIC_NAV_ITEMS.map((item) => (
-						<button
-							key={item.key}
-							type="button"
-							disabled
-							tabIndex={-1}
-							className={cn(NAV_LINK_CLASS, "cursor-not-allowed text-fg-disabled")}
-						>
-							{item.label}
-						</button>
-					))}
+					<div className="hidden min-[1360px]:contents">
+						<Divider orientation="vertical" className="mx-2 h-4 self-center" />
+						{STATIC_NAV_ITEMS.map((item) => (
+							<button
+								key={item.key}
+								type="button"
+								disabled
+								tabIndex={-1}
+								className={cn(NAV_LINK_CLASS, "cursor-not-allowed text-fg-disabled")}
+							>
+								{item.label}
+							</button>
+						))}
+					</div>
 				</nav>
 			</div>
 
-			<div className="flex items-center gap-2">
+			<div className="flex shrink-0 items-center gap-2">
 				{isConnected && (
 					<div className="flex items-center gap-px">
 						<Button
