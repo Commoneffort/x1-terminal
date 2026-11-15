@@ -21,6 +21,15 @@ export const PHASE_LABEL: Record<AutoTraderPhase, string> = {
 	waiting: "Waiting for first cycle",
 };
 
+export const PHASE_SHORT_LABEL: Record<AutoTraderPhase, string> = {
+	setup: "Not set up",
+	paused: "Paused",
+	active: "Active",
+	closing: "Closing",
+	stopped: "Loss stop hit",
+	waiting: "Starting",
+};
+
 export type PhaseTone = "on" | "off" | "alert";
 
 export function phaseTone(phase: AutoTraderPhase): PhaseTone {
