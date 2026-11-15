@@ -7,8 +7,6 @@ interface Props {
 	title: string;
 	subtitle: string;
 	equity: string;
-	dayPnl: string;
-	dayUp: boolean | null;
 	markets: string[];
 	actionLabel: string;
 	busy: boolean;
@@ -22,8 +20,6 @@ export function AutoStatusCard({
 	title,
 	subtitle,
 	equity,
-	dayPnl,
-	dayUp,
 	markets,
 	actionLabel,
 	busy,
@@ -60,12 +56,7 @@ export function AutoStatusCard({
 				</button>
 			</div>
 			<div className="grid grid-cols-3 gap-2 text-xs">
-				<Metric label="Equity" value={equity} />
-				<Metric
-					label="Day PNL"
-					value={dayPnl}
-					className={dayUp === null ? undefined : dayUp ? "text-market-up" : "text-market-down"}
-				/>
+				<Metric label="Account equity" value={equity} />
 			</div>
 			<button
 				type="button"

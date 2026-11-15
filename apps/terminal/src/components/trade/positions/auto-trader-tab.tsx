@@ -153,8 +153,8 @@ export function AutoTraderTab() {
 						</Stat>
 						<Stat label="Last cycle">{status?.lastCycle ? formatTime(status.lastCycle) : "-"}</Stat>
 						<Stat label="Next cycle">{timing?.label ?? "-"}</Stat>
-						<Stat label="Equity">{formatUSD(plan?.equity)}</Stat>
-						<Stat label="Day PNL">
+						<Stat label="Account equity">{formatUSD(plan?.equity)}</Stat>
+						<Stat label="Account day PNL">
 							<span className={plan?.dayPnl ? getValueColorClass(plan.dayPnl) : undefined}>
 								{plan?.dayPnl === undefined ? "-" : signedUsd(plan.dayPnl)}
 							</span>
