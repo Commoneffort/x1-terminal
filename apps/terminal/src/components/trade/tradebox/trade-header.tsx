@@ -1,5 +1,6 @@
-import { Button, Dropdown, Tabs, TabsList, TabsTrigger } from "@hypeterminal/ui";
+import { Dropdown, Tabs, TabsList, TabsTrigger } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import type { OrderType } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
 import { cn } from "@/lib/cn";
@@ -73,22 +74,6 @@ export function TradeHeader({
 
 	return (
 		<div className="flex min-w-0 flex-col">
-			{isLeveraged && (
-				<div className={cn("grid grid-cols-2 gap-2 pt-3 pb-1", insetClassName)}>
-					<Button variant="secondary" intent="neutral" size="sm" onClick={onMarginLeverageClick}>
-						{marginLabel}
-					</Button>
-					<Button
-						variant="secondary"
-						intent="neutral"
-						size="sm"
-						onClick={onMarginLeverageClick}
-						className="tabular-nums"
-					>
-						{leverage ?? 1}x
-					</Button>
-				</div>
-			)}
 			<div className={cn("flex h-9 items-stretch border-b border-stroke-weak max-md:h-10", insetClassName)}>
 				<Tabs value={tabsOrderType} onValueChange={handleTabChange} variant="underline" className="h-full">
 					<TabsList className={cn("h-full border-b-0")} hideIndicator={isAdvanced}>
@@ -115,6 +100,19 @@ export function TradeHeader({
 					triggerAriaLabel={t`Order type`}
 					triggerClassName={cn(moreTriggerClass, isAdvanced && moreActiveClass)}
 				/>
+				{isLeveraged && (
+					<button
+						type="button"
+						onClick={onMarginLeverageClick}
+						aria-label={t`Margin mode and leverage`}
+						className="my-auto ml-auto flex h-7 shrink-0 items-center gap-1.5 rounded-8 px-2 text-xs text-fg-secondary tabular-nums transition-colors hover:bg-control hover:text-fg"
+					>
+						{marginLabel}
+						<span className="text-fg-muted">·</span>
+						{leverage ?? 1}x
+						<CaretDownIcon weight="bold" className="size-3 text-fg-muted" />
+					</button>
+				)}
 			</div>
 
 			<div className={cn("flex min-w-0 flex-col gap-2 pt-3", insetClassName)}>
