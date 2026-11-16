@@ -32,8 +32,30 @@ function money(value: number) {
 	return `${value < 0 ? "-" : ""}$${Math.abs(value).toFixed(2)}`;
 }
 
+export function shortPrice(price: number) {
+	if (Math.abs(price) >= 100_000) return String(Math.round(price));
+	return String(Number(price.toPrecision(5)));
+}
+
+function luminance(hex: string) {
+	const channel = (shift: number) => {
+		const v = ((Number.parseInt(hex.slice(1, 7), 16) >> shift) & 255) / 255;
+		return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+	};
+	return 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0);
+}
+
+function contrast(a: string, b: string) {
+	const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+	return (hi + 0.05) / (lo + 0.05);
+}
+
+export function readableText(fill: string, dark: string, light: string) {
+	return contrast(fill, dark) >= contrast(fill, light) ? dark : light;
+}
+
 function body(line: TradingLine) {
-	if (line.kind === "liquidation") return `Liq. ${line.price}`;
+	if (line.kind === "liquidation") return `Liq. ${shortPrice(line.price)}`;
 	if (line.kind === "order") return line.title;
 	if (line.pnl === undefined) return line.title;
 	return `PNL ${money(line.pnl)}`;
@@ -65,12 +87,13 @@ export function leftOffsets(prices: readonly number[], widths: readonly number[]
 }
 
 export function positionLineStyle(line: TradingLine, colors: LineColors): PositionLineStyle {
+	const fill = mixHex(colors.color, colors.page, 0.12);
 	return {
 		body: body(line),
 		qty: line.kind === "liquidation" ? "" : signedQty(line),
 		color: colors.color,
-		fill: mixHex(colors.color, colors.page, 0.12),
-		text: colors.fg,
+		fill,
+		text: readableText(fill, colors.page, colors.fg),
 		surface: colors.page,
 		fg: colors.fg,
 	};
