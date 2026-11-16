@@ -143,6 +143,10 @@ function AutoControls({ auto }: { auto: ReturnType<typeof useAutoTrader> }) {
 				>
 					Remove
 				</button>
+				<a href="/auto-trader" className="inline-flex items-center gap-1 hover:text-fg">
+					Details
+					<ArrowUpRightIcon className="size-3" />
+				</a>
 				<a href="/API#api-wallets" className="inline-flex items-center gap-1 hover:text-fg">
 					API wallets
 					<ArrowUpRightIcon className="size-3" />

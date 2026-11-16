@@ -4,7 +4,6 @@ import { Suspense, useMemo, useState, useTransition } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
-import { useAutoManaged } from "@/hooks/use-auto-managed";
 import { useTradingAccount } from "@/hooks/use-trading-account";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -23,19 +22,17 @@ const OrdersHistoryTab = createLazyComponent(() => import("./orders-history-tab"
 const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab");
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
-const AutoTraderTab = createLazyComponent(() => import("./auto-trader-tab"), "AutoTraderTab");
 
 export function PositionsPanel() {
 	useRenderCommitTrack("positions-table");
-	const activeTab = usePositionsActiveTab();
+	const storedTab = usePositionsActiveTab();
+	const activeTab = POSITIONS_TABS.some((tab) => tab.value === storedTab) ? storedTab : "positions";
 	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [, startTransition] = useTransition();
 	const { address, isConnected } = useTradingAccount();
 	const { perpSummary, spotBalances } = useDefaultDexBalances();
 	const { positions } = useUserPositions();
-	const auto = useAutoManaged();
-	const tabs = auto.registered ? [...POSITIONS_TABS, { value: "auto-trader", label: "Auto Trader" }] : POSITIONS_TABS;
 	const { data: ordersEvent } = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
@@ -89,7 +86,7 @@ export function PositionsPanel() {
 				<div className="flex h-9 shrink-0 items-stretch gap-3 border-b border-stroke-weak px-3">
 					<div className="h-full min-w-0 flex-1 overflow-x-auto scrollbar-none">
 						<TabsList className="h-full min-w-max border-b-0">
-							{tabs.map((tab) => {
+							{POSITIONS_TABS.map((tab) => {
 								const count = getTabCount(tab.value);
 								return (
 									<TabsTrigger key={tab.value} value={tab.value} className="h-full py-0">
@@ -135,13 +132,6 @@ export function PositionsPanel() {
 						<HistoryTab />
 					</Suspense>
 				</TabsContent>
-				{auto.registered && (
-					<TabsContent value="auto-trader" className={tabContentClass}>
-						<Suspense fallback={<TabLoadingFallback />}>
-							<AutoTraderTab />
-						</Suspense>
-					</TabsContent>
-				)}
 				<TabsContent value="funding" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<FundingTab />
