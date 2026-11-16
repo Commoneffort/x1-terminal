@@ -120,7 +120,7 @@ export function X1Setup() {
 						)}
 						{!BUILDER_CONFIGURED && (
 							<p role="alert" className="text-xs text-warning">
-								Trading is unavailable until the operator configures VITE_BUILDER_ADDRESS.
+								Trading setup is unavailable for this deployment. Please contact support.
 							</p>
 						)}
 						{errorMessage && (

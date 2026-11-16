@@ -1,6 +1,7 @@
 import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
@@ -41,14 +42,30 @@ function isCurrent(option: Mode, mode: string | undefined) {
 
 export function AccountModeControl() {
 	const { address, isConnected } = useConnection();
+	const { pathname } = useLocation();
 	const testnet = useIsTestnet();
 	if (!isConnected || !address) return null;
-	return <AccountModeContent key={`${address}:${testnet}`} address={address} testnet={testnet} />;
+	return (
+		<AccountModeContent
+			key={`${address}:${testnet}`}
+			address={address}
+			testnet={testnet}
+			preferredMode={pathname === "/newtheme" ? "unifiedAccount" : undefined}
+		/>
+	);
 }
 
-function AccountModeContent({ address, testnet }: { address: `0x${string}`; testnet: boolean }) {
+function AccountModeContent({
+	address,
+	testnet,
+	preferredMode,
+}: {
+	address: `0x${string}`;
+	testnet: boolean;
+	preferredMode?: Mode;
+}) {
 	const [open, setOpen] = useState(false);
-	const [selected, setSelected] = useState<Mode>("disabled");
+	const [selected, setSelected] = useState<Mode>(preferredMode ?? "disabled");
 	const popup = useRef<HTMLDivElement>(null);
 	const mode = useQuery({
 		queryKey: ["account-mode", address, testnet],
@@ -75,7 +92,7 @@ function AccountModeContent({ address, testnet }: { address: `0x${string}`; test
 	}
 
 	function openDialog() {
-		setSelected(mode.data === "unifiedAccount" ? "unifiedAccount" : "disabled");
+		setSelected(preferredMode ?? (mode.data === "unifiedAccount" ? "unifiedAccount" : "disabled"));
 		setOpen(true);
 		void mode.refetch();
 	}
