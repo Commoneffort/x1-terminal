@@ -47,7 +47,7 @@ it("draws position and liquidation lines and removes only its own lines on disco
 	const root = createRoot(document.createElement("div"));
 	await act(async () => root.render(createElement(Harness)));
 	expect(chart.createPositionLine).toHaveBeenCalledTimes(2);
-	expect(texts).toEqual(["+5.00 USD", "Liquidation"]);
+	expect(texts).toEqual(["PNL $5.00", "Liq. 80"]);
 	state.connected = false;
 	await act(async () => root.render(createElement(Harness)));
 	expect(removed).toHaveBeenCalledTimes(2);

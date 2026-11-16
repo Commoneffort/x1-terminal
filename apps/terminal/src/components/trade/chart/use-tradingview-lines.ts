@@ -1,7 +1,15 @@
 import { useEffect, useMemo } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { useTradingAccount } from "@/hooks/use-trading-account";
-import { positionLineStyle, staggerOffsets } from "@/lib/chart/position-line-style";
+import {
+	LABEL_FONT,
+	LABEL_HEIGHT,
+	LEFT_INSET,
+	labelWidth,
+	leftOffsets,
+	measureLabel,
+	positionLineStyle,
+} from "@/lib/chart/position-line-style";
 import { colorToHex, getChartColors } from "@/lib/chart/theme-colors";
 import { buildTradingLines, getTradingLineColor } from "@/lib/chart/trading-lines";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -37,23 +45,29 @@ export function useTradingViewLines(widget: IChartingLibraryWidget | null, symbo
 		if (!widget || hidden) return;
 		let active = true;
 		const chart = widget.activeChart();
-		const surface = colorToHex(getChartColors().background);
+		const chartColors = getChartColors();
+		const page = colorToHex(chartColors.page);
+		const fg = colorToHex(chartColors.foreground);
 		const removers: (() => void)[] = [];
 		const draw = () => {
 			if (!active) return;
-			let visible: number | null = null;
+			let minGap = 0;
 			try {
-				const range = chart.getPanes()[0]?.getMainSourcePriceScale()?.getVisiblePriceRange();
-				if (range) visible = Math.abs(range.to - range.from);
+				const pane = chart.getPanes()[0];
+				const range = pane?.getMainSourcePriceScale()?.getVisiblePriceRange();
+				const height = pane?.getHeight();
+				if (range && height) minGap = (Math.abs(range.to - range.from) * LABEL_HEIGHT) / height;
 			} catch {
-				visible = null;
+				minGap = 0;
 			}
-			const offsets = staggerOffsets(
+			const styles = lines.map((line) => positionLineStyle(line, { color: getTradingLineColor(line.tone), page, fg }));
+			const lefts = leftOffsets(
 				lines.map((line) => line.price),
-				visible,
+				styles.map((style) => labelWidth(style, measureLabel)),
+				minGap,
 			);
 			for (const [index, line] of lines.entries()) {
-				const style = positionLineStyle(line, getTradingLineColor(line.tone), surface, offsets[index]);
+				const style = styles[index];
 				try {
 					const adapter = chart
 						.createPositionLine({ disableUndo: true })
@@ -61,18 +75,18 @@ export function useTradingViewLines(widget: IChartingLibraryWidget | null, symbo
 						.setText(style.body)
 						.setQuantity(style.qty)
 						.setLineColor(style.color)
-						.setLineStyle(0)
+						.setLineStyle(2)
 						.setLineWidth(1)
-						.setLineLength(style.length)
-						.setExtendLeft(true)
-						.setBodyFont("600 12px Inter, sans-serif")
-						.setQuantityFont("700 12px Inter, sans-serif")
-						.setBodyBackgroundColor(style.surface)
+						.setLineLength(-lefts[index], "pixel")
+						.setExtendLeft(lefts[index] === LEFT_INSET)
+						.setBodyFont(LABEL_FONT)
+						.setQuantityFont(LABEL_FONT)
+						.setBodyBackgroundColor(style.fill)
 						.setBodyBorderColor(style.color)
-						.setBodyTextColor(style.color)
+						.setBodyTextColor(style.text)
 						.setQuantityBackgroundColor(style.surface)
 						.setQuantityBorderColor(style.color)
-						.setQuantityTextColor(style.color);
+						.setQuantityTextColor(style.fg);
 					removers.push(() => adapter.remove());
 				} catch {
 					/* Chart may not be ready for trading primitives. */
