@@ -22,6 +22,18 @@ export function getAdvancedOrderLabel(orderType: OrderType, fallback: string): s
 	return isAdvancedOrderType(orderType) ? getAdvancedOrderTypeLabel(orderType) : fallback;
 }
 
+const SHORT_LABELS: Partial<Record<AdvancedOrderType, () => string>> = {
+	stopMarket: () => t`Stop Mkt`,
+	stopLimit: () => t`Stop Lmt`,
+	takeProfitMarket: () => t`TP Mkt`,
+	takeProfitLimit: () => t`TP Lmt`,
+};
+
+export function getShortAdvancedOrderLabel(orderType: OrderType, fallback: string): string {
+	if (!isAdvancedOrderType(orderType)) return fallback;
+	return SHORT_LABELS[orderType]?.() ?? getAdvancedOrderTypeLabel(orderType);
+}
+
 export function isAdvancedOrderType(orderType: OrderType): orderType is AdvancedOrderType {
 	return orderType !== "market" && orderType !== "limit";
 }
