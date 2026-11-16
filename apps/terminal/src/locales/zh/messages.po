@@ -82,7 +82,7 @@ msgstr ""
 msgid "Account Leverage"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:137
+#: src/components/auto-trader/auto-trader-panel.tsx:398
 msgid "Account readiness"
 msgstr ""
 
@@ -148,7 +148,7 @@ msgstr ""
 msgid "Any portion that is not immediately filled will be canceled."
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:145
+#: src/components/auto-trader/auto-trader-panel.tsx:481
 msgid "Approve 0.05% fee"
 msgstr ""
 
@@ -168,11 +168,11 @@ msgstr ""
 msgid "Asset"
 msgstr "资产"
 
-#: src/components/auto-trader/auto-trader-panel.tsx:28
+#: src/components/auto-trader/auto-trader-panel.tsx:53
 msgid "Auto Trader"
 msgstr ""
 
-#: src/components/auto-trader/settings-card.tsx:12
+#: src/components/auto-trader/settings-card.tsx:30
 msgid "Auto Trader settings"
 msgstr ""
 
@@ -231,7 +231,7 @@ msgstr ""
 msgid "Buy"
 msgstr "买入"
 
-#: src/components/auto-trader/auto-trader-panel.tsx:188
+#: src/components/auto-trader/auto-trader-panel.tsx:820
 #: src/components/trade/mobile/mobile-orders-tab.tsx:314
 #: src/components/trade/mobile/mobile-position-card.tsx:199
 #: src/components/trade/mobile/mobile-twap-tab.tsx:110
@@ -281,7 +281,7 @@ msgstr ""
 msgid "Close"
 msgstr "关闭"
 
-#: src/components/auto-trader/auto-trader-panel.tsx:172
+#: src/components/auto-trader/auto-trader-panel.tsx:727
 msgid "Close & pause"
 msgstr ""
 
@@ -311,7 +311,7 @@ msgstr "Closed PNL"
 msgid "Closing..."
 msgstr "平仓中..."
 
-#: src/components/auto-trader/auto-trader-panel.tsx:188
+#: src/components/auto-trader/auto-trader-panel.tsx:833
 #: src/components/trade/positions/position-tpsl-modal.tsx:192
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx:146
 #: src/components/trade/tradebox/leverage-control.tsx:207
@@ -336,7 +336,7 @@ msgstr ""
 msgid "Confirm transaction in your wallet"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:30
+#: src/components/auto-trader/auto-trader-panel.tsx:78
 msgid "Connect Rabby, X1 Wallet or Phantom above to configure Auto Trader."
 msgstr ""
 
@@ -485,7 +485,7 @@ msgstr ""
 msgid "Creating link..."
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:165
+#: src/components/auto-trader/auto-trader-panel.tsx:670
 msgid "Creating the dedicated API wallet does not start trading. Register, review your saved settings, then explicitly enable. Renewal replaces the previous Auto Trader key and registration pauses execution."
 msgstr ""
 
@@ -519,15 +519,15 @@ msgstr ""
 msgid "Current position available to close on this side; no additional opening margin is required."
 msgstr ""
 
-#: src/components/auto-trader/status-card.tsx:40
+#: src/components/auto-trader/status-card.tsx:144
 msgid "Cycle orders and fills"
 msgstr ""
 
-#: src/components/auto-trader/settings-card.tsx:14
+#: src/components/auto-trader/settings-card.tsx:49
 msgid "Daily loss stop (%)"
 msgstr ""
 
-#: src/components/auto-trader/status-card.tsx:38
+#: src/components/auto-trader/status-card.tsx:130
 msgid "Daily loss stop reached. Opens and adds are blocked; the executor can only reduce exposure until the UTC daily reset."
 msgstr ""
 
@@ -695,7 +695,7 @@ msgstr ""
 msgid "Estimated time"
 msgstr ""
 
-#: src/lib/errors/stacks/perp-order.ts:69
+#: src/lib/errors/stacks/perp-order.ts:74
 msgid "Exceeds held position size"
 msgstr ""
 
@@ -712,7 +712,7 @@ msgstr "已执行"
 msgid "Execution"
 msgstr ""
 
-#: src/components/auto-trader/status-card.tsx:30
+#: src/components/auto-trader/status-card.tsx:58
 msgid "Executor status"
 msgstr ""
 
@@ -720,7 +720,7 @@ msgstr ""
 msgid "Explorer"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:146
+#: src/components/auto-trader/auto-trader-panel.tsx:485
 msgid "Fail-safe guards block trading on stale signals, expired agents, missing approvals or low equity. The daily loss stop blocks increases in exposure; it cannot guarantee a loss limit."
 msgstr ""
 
@@ -816,7 +816,7 @@ msgstr "按 {0} 筛选"
 msgid "Flip transfer direction"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:28
+#: src/components/auto-trader/auto-trader-panel.tsx:56
 msgid "Follow the Mood Ring signal with a trading-only API wallet. You control leverage, markets, minimum order size and the daily loss stop. Loss controls do not guarantee a maximum loss. No returns are promised."
 msgstr ""
 
@@ -932,7 +932,7 @@ msgstr ""
 msgid "Leaderboard"
 msgstr "排行榜"
 
-#: src/components/auto-trader/settings-card.tsx:13
+#: src/components/auto-trader/settings-card.tsx:34
 #: src/components/trade/tradebox/leverage-control.tsx:39
 #: src/components/trade/tradebox/leverage-control.tsx:125
 #: src/components/trade/tradebox/margin-mode-modal.tsx:188
@@ -981,7 +981,7 @@ msgstr ""
 msgid "Loading"
 msgstr "加载中"
 
-#: src/components/auto-trader/auto-trader-panel.tsx:179
+#: src/components/auto-trader/auto-trader-panel.tsx:760
 msgid "Loading Auto Trader status…"
 msgstr ""
 
@@ -1059,7 +1059,7 @@ msgstr ""
 msgid "Maintenance Margin"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:174
+#: src/components/auto-trader/auto-trader-panel.tsx:743
 msgid "Manage / revoke API wallets"
 msgstr ""
 
@@ -1132,7 +1132,7 @@ msgstr "市场未就绪"
 msgid "markets"
 msgstr "个市场"
 
-#: src/components/auto-trader/settings-card.tsx:28
+#: src/components/auto-trader/settings-card.tsx:159
 #: src/components/trade/chart/token-selector-content.tsx:219
 #: src/components/trade/mobile/mobile-nav-drawer.tsx:66
 msgid "Markets"
@@ -1171,7 +1171,7 @@ msgstr ""
 msgid "Minimum deposit is 5 USDC"
 msgstr ""
 
-#: src/components/auto-trader/settings-card.tsx:15
+#: src/components/auto-trader/settings-card.tsx:63
 msgid "Minimum order (USD)"
 msgstr ""
 
@@ -1275,7 +1275,7 @@ msgstr "未找到市场。"
 msgid "No open orders."
 msgstr "无未成交订单。"
 
-#: src/lib/errors/stacks/perp-order.ts:69
+#: src/lib/errors/stacks/perp-order.ts:73
 msgid "No position to reduce on this side"
 msgstr ""
 
@@ -1450,7 +1450,7 @@ msgstr ""
 msgid "Placed"
 msgstr ""
 
-#: src/components/auto-trader/status-card.tsx:39
+#: src/components/auto-trader/status-card.tsx:137
 msgid "Plans run about every five minutes. Active does not guarantee live trading: execution also requires the operator's live gate. Paused and dry-run plans send no orders."
 msgstr ""
 
@@ -1551,11 +1551,11 @@ msgstr "只减仓"
 msgid "Reducible"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:144
+#: src/components/auto-trader/auto-trader-panel.tsx:461
 msgid "Refresh checks"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:157
+#: src/components/auto-trader/auto-trader-panel.tsx:606
 msgid "Register Auto Trader"
 msgstr ""
 
@@ -1568,11 +1568,11 @@ msgstr ""
 msgid "Remove {displayName} from favorites"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:173
+#: src/components/auto-trader/auto-trader-panel.tsx:738
 msgid "Remove Auto Trader"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:158
+#: src/components/auto-trader/auto-trader-panel.tsx:617
 msgid "Renew API wallet"
 msgstr ""
 
@@ -1588,7 +1588,7 @@ msgstr ""
 msgid "Reset phone access"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:160
+#: src/components/auto-trader/auto-trader-panel.tsx:644
 msgid "Reset to saved"
 msgstr ""
 
@@ -1641,7 +1641,7 @@ msgstr ""
 msgid "Runtime"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:159
+#: src/components/auto-trader/auto-trader-panel.tsx:630
 msgid "Save settings"
 msgstr ""
 
@@ -1999,7 +1999,7 @@ msgstr ""
 msgid "Testnet"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:30
+#: src/components/auto-trader/auto-trader-panel.tsx:72
 msgid "The hosted Auto Trader service supports Mainnet only. Switch the terminal to Mainnet to configure it."
 msgstr ""
 
@@ -2007,7 +2007,7 @@ msgstr ""
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
 
-#: src/components/auto-trader/auto-trader-panel.tsx:162
+#: src/components/auto-trader/auto-trader-panel.tsx:650
 msgid "This setup key exists only in this page's memory. Register it before leaving. It is encrypted for the service; it is not saved to browser storage."
 msgstr ""
 
@@ -2223,7 +2223,7 @@ msgstr ""
 msgid "Unrealized PNL"
 msgstr "未实现盈亏"
 
-#: src/components/auto-trader/auto-trader-panel.tsx:164
+#: src/components/auto-trader/auto-trader-panel.tsx:664
 msgid "Unsaved settings. Save before enabling. Changes to an active trader apply on its next cycle."
 msgstr ""
 
@@ -2327,7 +2327,7 @@ msgstr ""
 msgid "You're offline"
 msgstr ""
 
-#: src/components/auto-trader/status-card.tsx:35
+#: src/components/auto-trader/status-card.tsx:109
 msgid "Your agent expires within 14 days. Renew its API wallet, register the new key, then enable Auto Trader again."
 msgstr ""
 
@@ -2339,7 +2339,7 @@ msgstr ""
 msgid "Your current open position on this market"
 msgstr ""
 
-#: src/components/auto-trader/auto-trader-panel.tsx:29
+#: src/components/auto-trader/auto-trader-panel.tsx:63
 msgid "Your funds stay in your Hyperliquid account. A separate agent can trade but cannot withdraw. Its key is sealed in your browser and stored encrypted by the existing execution service. Your owner key stays in your wallet. Auto Trader manages positions in the selected trading account, including markets you also trade manually there."
 msgstr ""
 
