@@ -90,7 +90,7 @@ function AccountModeContent({ address, testnet }: { address: `0x${string}`; test
 				className="gap-2 whitespace-nowrap"
 				onClick={openDialog}
 			>
-				Mode: {mode.isError ? "Retry" : current}
+				{mode.isError ? "Retry" : current}
 				<CaretDownIcon size={12} weight="bold" className="shrink-0 text-fg-muted" aria-hidden="true" />
 			</Button>
 			<Modal

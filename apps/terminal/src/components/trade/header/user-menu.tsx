@@ -25,7 +25,6 @@ import { feeDecimals, feesToXnt } from "@/lib/rewards/xnt-rewards";
 import { clearX1Session } from "@/lib/x1/provider";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useTradingAccountStore } from "@/stores/use-trading-account-store";
-import { AccountModeControl } from "../components/account-mode-control";
 import { ExportKeyModal } from "../components/export-key-modal";
 import { WalletLogo } from "../components/wallet-logo";
 import { WalletModal } from "../components/wallet-modal";
@@ -178,7 +177,6 @@ export function UserMenu() {
 
 	return (
 		<>
-			{!active.isSubaccount && <AccountModeControl />}
 			<Dropdown
 				align="end"
 				size="sm"

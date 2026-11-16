@@ -14,9 +14,11 @@ import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { useId, useState } from "react";
+import { useConnection } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { dynamicActivate } from "@/lib/i18n";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
@@ -25,6 +27,7 @@ import {
 	useMarketOrderSlippagePercent,
 	useNetwork,
 } from "@/stores/use-global-settings-store";
+import { AccountModeControl } from "./account-mode-control";
 
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
@@ -36,6 +39,9 @@ export function GlobalSettingsModal() {
 		useGlobalSettingsActions();
 	const network = useNetwork();
 	const slippageInputId = useId();
+	const account = useTradingAccount();
+	const wallet = useConnection();
+	const showAccountMode = wallet.isConnected && !account.isSubaccount;
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
 	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
@@ -72,12 +78,19 @@ export function GlobalSettingsModal() {
 
 	return (
 		<Modal open={open} onOpenChange={close}>
-			<ModalPopup size="sm">
+			<ModalPopup size="sm" className="transition-[filter] duration-200 data-[nested-dialog-open]:brightness-50">
 				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>
 
 				<ModalContent className="flex flex-col gap-6">
+					{showAccountMode && (
+						<SettingsGroup label={t`Account`}>
+							<SettingRow label={t`Account type`} hint={t`Unified shares one balance across spot and perps.`}>
+								<AccountModeControl />
+							</SettingRow>
+						</SettingsGroup>
+					)}
 					<SettingsGroup label={t`Trading`}>
 						<div className="flex flex-col gap-2">
 							<label htmlFor={slippageInputId} className="text-xs text-fg">
