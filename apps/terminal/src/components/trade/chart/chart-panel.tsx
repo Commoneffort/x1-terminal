@@ -15,7 +15,7 @@ const KlineChart = createLazyComponent(() => import("./kline-chart"), "KlineChar
 
 type ChartType = "default" | "tradingview";
 
-export function ChartPanel({yAxisInside=false}:{yAxisInside?:boolean} = {}) {
+export function ChartPanel({ yAxisInside = false }: { yAxisInside?: boolean } = {}) {
 	useRenderCommitTrack("chart");
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
@@ -33,7 +33,7 @@ export function ChartPanel({yAxisInside=false}:{yAxisInside?:boolean} = {}) {
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<KlineChart
-       yAxisInside={yAxisInside}
+							yAxisInside={yAxisInside}
 							symbol={selectedMarket.name}
 							positionDex={getPositionDex(selectedMarket)}
 							theme={chartTheme}

@@ -1,3 +1,5 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 export const TerminalBrandContext = createContext<ReactNode>(null);
-export function useTerminalBrand() { return useContext(TerminalBrandContext); }
+export function useTerminalBrand() {
+	return useContext(TerminalBrandContext);
+}

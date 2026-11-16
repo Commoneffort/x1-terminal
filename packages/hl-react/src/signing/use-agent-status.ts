@@ -57,7 +57,11 @@ export function useAgentStatus(): UseAgentStatusResult {
 		{ enabled: !!address && hasBuilderConfig, refetchOnWindowFocus: true },
 	);
 
-	const extraAgentsQuery = useInfo("extraAgents", { user: userAddress }, { enabled: !!address, refetchOnWindowFocus: true, refetchInterval: 60_000 });
+	const extraAgentsQuery = useInfo(
+		"extraAgents",
+		{ user: userAddress },
+		{ enabled: !!address, refetchOnWindowFocus: true, refetchInterval: 60_000 },
+	);
 
 	const isLoading = builderFeeQuery.isLoading || extraAgentsQuery.isLoading;
 	const requirements = deriveRequirements(
@@ -78,7 +82,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 		}
 
 		const savedAgent = address ? readAgentFromStorage(env, address) : null;
-        return deriveRequirements(feeResult.data, agentsResult.data, savedAgent?.publicKey, builderConfig);
+		return deriveRequirements(feeResult.data, agentsResult.data, savedAgent?.publicKey, builderConfig);
 	}
 
 	return {

@@ -35,7 +35,11 @@ describe("wallet utilities", () => {
 		const phantom = connector({ id: "phantom", name: "Phantom", type: "injected" });
 		const x1 = connector({ id: "x1", name: "X1", type: "x1" });
 
-		expect(sortWalletConnectors([x1, phantom, rabby], ["x1"]).map((item) => item.id)).toEqual(["x1", "rabby", "phantom"]);
+		expect(sortWalletConnectors([x1, phantom, rabby], ["x1"]).map((item) => item.id)).toEqual([
+			"x1",
+			"rabby",
+			"phantom",
+		]);
 	});
 
 	it("splits mock connectors away from regular popular and other wallets", () => {

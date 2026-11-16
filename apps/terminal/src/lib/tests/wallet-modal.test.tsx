@@ -51,7 +51,9 @@ it("connects Rabby without requiring the X1 derived-account acknowledgment", asy
 	const root = createRoot(el);
 	const close = vi.fn();
 	await act(async () => root.render(createElement(WalletModal, { open: true, onOpenChange: close })));
-	const rabby = [...el.querySelectorAll("button")].find((b) => b.textContent?.includes("Rabby Wallet")) as HTMLButtonElement;
+	const rabby = [...el.querySelectorAll("button")].find((b) =>
+		b.textContent?.includes("Rabby Wallet"),
+	) as HTMLButtonElement;
 	expect(rabby.disabled).toBe(false);
 	expect(el.textContent).toContain("approve signing requests on the device");
 	await act(async () => rabby.click());

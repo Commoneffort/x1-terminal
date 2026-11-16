@@ -1,9 +1,9 @@
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
-import { withRetry } from "@/lib/chart/retry";
 import { buildExecutionMarkers, type ExecutionFill } from "@/lib/chart/execution-markers";
 import { type CandleInterval, RESOLUTIONS, resolutionToInterval } from "@/lib/chart/resolution";
+import { withRetry } from "@/lib/chart/retry";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import { coinFromSymbolName, inferPriceScaleFromMids, symbolFromCoin } from "@/lib/chart/symbol";
 import { colorToHex, getChartColors } from "@/lib/chart/theme-colors";

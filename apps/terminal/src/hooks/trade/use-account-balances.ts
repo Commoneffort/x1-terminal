@@ -1,8 +1,8 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
-import { getAccountUnrealizedPnl } from "@/lib/positions/valuation";
 import { useMemo } from "react";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { useSubscription } from "@/lib/hyperliquid";
+import { getAccountUnrealizedPnl } from "@/lib/positions/valuation";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawSpotState = SpotStateWsEvent["spotState"] & {
@@ -116,6 +116,6 @@ export { useDefaultDexBalances as useAccountBalances };
 
 // Display-only aggregate: transfer and order-entry balances remain venue-specific.
 export function useAccountUnrealizedPnl(): number | null {
- const { clearinghouseStates } = useAllDexsAccountState();
- return useMemo(() => getAccountUnrealizedPnl(clearinghouseStates), [clearinghouseStates]);
+	const { clearinghouseStates } = useAllDexsAccountState();
+	return useMemo(() => getAccountUnrealizedPnl(clearinghouseStates), [clearinghouseStates]);
 }

@@ -1,5 +1,13 @@
 import { AUTO_TRADER_API } from "./auto-trader";
-function autoTraderOrigin(){try{const url=new URL(AUTO_TRADER_API);return url.protocol==="https:"?url.origin:"https://wxnt-sale-sim.vercel.app";}catch{return "https://wxnt-sale-sim.vercel.app";}}
+
+function autoTraderOrigin() {
+	try {
+		const url = new URL(AUTO_TRADER_API);
+		return url.protocol === "https:" ? url.origin : "https://wxnt-sale-sim.vercel.app";
+	} catch {
+		return "https://wxnt-sale-sim.vercel.app";
+	}
+}
 export const cspDirectives: Record<string, string> = {
 	"default-src": "'self'",
 	"base-uri": "'self'",
@@ -13,12 +21,12 @@ export const cspDirectives: Record<string, string> = {
 	"connect-src": [
 		"'self'",
 		"https://app.hyperliquid.xyz",
-  "https://wxnt-sale-sim.vercel.app",
-  autoTraderOrigin(),
+		"https://wxnt-sale-sim.vercel.app",
+		autoTraderOrigin(),
 		"https://api.hyperliquid.xyz",
- "https://api.hyperunit.xyz",
- "https://api.mainnet-beta.solana.com",
- "https://solana-rpc.publicnode.com",
+		"https://api.hyperunit.xyz",
+		"https://api.mainnet-beta.solana.com",
+		"https://solana-rpc.publicnode.com",
 		"https://api.hyperliquid-testnet.xyz",
 		"wss://api.hyperliquid.xyz",
 		"wss://api.hyperliquid-testnet.xyz",

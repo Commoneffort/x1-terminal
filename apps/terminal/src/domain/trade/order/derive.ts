@@ -13,8 +13,8 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
 
 export interface OrderEntryInputs {
- reduceOnly?: boolean;
- positionSize?: string | number | null;
+	reduceOnly?: boolean;
+	positionSize?: string | number | null;
 	isConnected: boolean;
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
@@ -30,7 +30,7 @@ export interface OrderEntryInputs {
 }
 
 export interface OrderEntryDerived {
- isReducing: boolean;
+	isReducing: boolean;
 	isSpotMarket: boolean;
 	baseToken: string;
 	quoteToken: string;
@@ -82,12 +82,15 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		spotBalance,
 		szDecimals,
 		maxTradeSzs: inputs.maxTradeSzs,
-  reduceOnly: inputs.reduceOnly,
-  positionSize: inputs.positionSize,
+		reduceOnly: inputs.reduceOnly,
+		positionSize: inputs.positionSize,
 	});
 
- const isReducing = !isSpotMarket && !!inputs.reduceOnly;
- if (isReducing) { availableBalance = maxSize; availableBalanceToken = baseToken; }
+	const isReducing = !isSpotMarket && !!inputs.reduceOnly;
+	if (isReducing) {
+		availableBalance = maxSize;
+		availableBalanceToken = baseToken;
+	}
 
 	const sizeValue = getSizeValueFromInput({
 		sizeInput: inputs.sizeInput,
@@ -101,7 +104,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {
-  isReducing,
+		isReducing,
 		isSpotMarket,
 		baseToken,
 		quoteToken,

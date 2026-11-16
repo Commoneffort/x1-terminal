@@ -2,7 +2,11 @@ import { expect, it, vi } from "vitest";
 import { withRetry } from "@/lib/chart/retry";
 
 it("retries a failing request and returns the first success", async () => {
-	const job = vi.fn().mockRejectedValueOnce(new Error("429")).mockRejectedValueOnce(new Error("429")).mockResolvedValue("bars");
+	const job = vi
+		.fn()
+		.mockRejectedValueOnce(new Error("429"))
+		.mockRejectedValueOnce(new Error("429"))
+		.mockResolvedValue("bars");
 	await expect(withRetry(job, [1, 1, 1])).resolves.toBe("bars");
 	expect(job).toHaveBeenCalledTimes(3);
 });

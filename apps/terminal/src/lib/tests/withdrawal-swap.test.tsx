@@ -139,7 +139,7 @@ it("fills half the spendable balance and clears the amount when reversing direct
 	expect(state.submit).not.toHaveBeenCalled();
 	await act(async () => node.querySelector<HTMLButtonElement>('button[aria-label="Swap direction"]')!.click());
 	expect(node.querySelector<HTMLInputElement>('input[aria-label="Swap amount"]')!.value).toBe("");
-	expect(node.querySelector("button[aria-label^=\"Select token\"]")?.getAttribute("aria-label")).toMatch(/SOL/);
+	expect(node.querySelector('button[aria-label^="Select token"]')?.getAttribute("aria-label")).toMatch(/SOL/);
 	expect(state.submit).not.toHaveBeenCalled();
 	await act(async () => root.unmount());
 });
