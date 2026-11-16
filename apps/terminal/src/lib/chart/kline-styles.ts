@@ -103,6 +103,9 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 				downBorderColor: red,
 				upWickColor: green,
 				downWickColor: red,
+				noChangeColor: green,
+				noChangeBorderColor: green,
+				noChangeWickColor: green,
 			},
 			area: {
 				lineColor: textSecondary,
@@ -121,7 +124,7 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 					show: true,
 					upColor: green,
 					downColor: red,
-					noChangeColor: textSecondary,
+					noChangeColor: green,
 					line: { show: true, style: LineType.Dashed, size: 1, dashedValue: [4, 4] },
 					text: {
 						show: true,
@@ -184,12 +187,12 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 			},
 		},
 		indicator: {
-			ohlc: { upColor: green, downColor: red, noChangeColor: textSecondary },
+			ohlc: { upColor: green, downColor: red, noChangeColor: green },
 			bars: [
 				{
 					upColor: colorToRgba(colors.green, 0.5),
 					downColor: colorToRgba(colors.red, 0.5),
-					noChangeColor: textSecondary,
+					noChangeColor: colorToRgba(colors.green, 0.5),
 				},
 			],
 			lines: [
