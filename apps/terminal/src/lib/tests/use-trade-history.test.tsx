@@ -80,3 +80,30 @@ it("refreshes only the overlapping tail of a complete cached day", async () => {
 	});
 	expect(result!.fills.map((fill) => fill.tid)).toEqual([2, 1]);
 });
+
+it("keeps fills older than 24 hours when a longer window is requested", async () => {
+	client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const now = Date.now();
+	const old = { coin: "BTC", tid: 1, hash: "0xab", time: now - 3 * 86_400_000 };
+	const recent = { ...old, tid: 2, time: now - 60_000 };
+	state.request.mockResolvedValue([recent, old]);
+	let day: ReturnType<typeof useTradeHistory>;
+	let month: ReturnType<typeof useTradeHistory>;
+	function Probe() {
+		day = useTradeHistory();
+		month = useTradeHistory(false, 30 * 86_400_000);
+		return null;
+	}
+	root = createRoot(document.createElement("div"));
+	await act(async () => {
+		root.render(createElement(QueryClientProvider, { client }, createElement(Probe)));
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	});
+	await act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 20));
+	});
+	expect(day!.fills.map((fill) => fill.tid)).toEqual([2]);
+	expect(month!.fills.map((fill) => fill.tid)).toEqual([2, 1]);
+	const starts = state.request.mock.calls.map((call) => now - call[0].startTime);
+	expect(starts.some((age) => age > 29 * 86_400_000)).toBe(true);
+});

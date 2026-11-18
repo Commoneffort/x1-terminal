@@ -3,7 +3,7 @@ import { useTradingAccount } from "@/hooks/use-trading-account";
 import { useHyperliquid } from "@/lib/hyperliquid";
 import { getNetwork } from "@/lib/network";
 import { summarizeRewards } from "@/lib/rewards/xnt-rewards";
-import { loadDayFills } from "@/lib/trade/fill-history";
+import { loadFillsForward } from "@/lib/trade/fill-history";
 
 export function useXntRewards(enabled = true) {
 	const { address, isConnected } = useTradingAccount();
@@ -16,7 +16,7 @@ export function useXntRewards(enabled = true) {
 		refetchInterval: 120_000,
 		queryFn: async ({ signal }) => {
 			const now = Date.now();
-			const { fills, limited } = await loadDayFills(
+			const { fills, limited } = await loadFillsForward(
 				(startTime, endTime) => info.userFillsByTime({ user: address!, startTime, endTime }, signal),
 				now,
 				0,

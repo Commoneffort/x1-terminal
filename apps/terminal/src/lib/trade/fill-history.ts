@@ -32,3 +32,27 @@ export async function loadDayFills(
 	if (fills.length >= 10000) limited = true;
 	return { fills, limited };
 }
+
+/**
+ * Page forward from `startTime`. Hyperliquid returns the oldest 2,000 fills of a window, so each
+ * page starts at the last fill time it saw. Pages overlap on that millisecond and are deduped.
+ * Hyperliquid keeps at most the latest 10,000 fills, so this needs at most a few requests.
+ */
+export async function loadFillsForward(
+	fetchPage: (startTime: number, endTime: number) => Promise<HistoryFill[]>,
+	now: number,
+	startTime: number,
+	maxRequests = 8,
+): Promise<{ fills: HistoryFill[]; limited: boolean }> {
+	let fills: HistoryFill[] = [];
+	let start = startTime;
+	for (let request = 0; request < maxRequests; request++) {
+		const page = await fetchPage(start, now);
+		fills = mergeHistoryFills(fills, page);
+		if (page.length < 2000) return { fills, limited: fills.length >= 10000 };
+		const last = Math.max(...page.map((fill) => fill.time));
+		if (last <= start) return { fills, limited: true };
+		start = last;
+	}
+	return { fills, limited: true };
+}
