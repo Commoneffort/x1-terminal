@@ -1,3 +1,4 @@
+import "./orders-table.css";
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { PencilIcon } from "@phosphor-icons/react";
@@ -317,7 +318,12 @@ export function OrdersTab() {
 			<div className={accountTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="min-h-0 w-full flex-1">
-						<Table className={accountTableClass}>
+						<Table className={cn(accountTableClass, "open-orders-table min-w-0 table-fixed")}>
+							<colgroup>
+								{ORDER_COLUMN_WIDTHS.map((width, column) => (
+									<col key={headings[column]?.label ?? "actions"} style={{ width: `${width}%` }} />
+								))}
+							</colgroup>
 							<TableHeader>
 								<TableRow>
 									{headings.map((heading) => (
@@ -473,12 +479,20 @@ export function OrdersTab() {
 
 function EditValueButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
 	return (
-		<button type="button" aria-label={label} title={label} onClick={onClick} className={accountTextLinkClass}>
-			{children}
-			<PencilIcon className="size-3 text-fg-muted" />
+		<button
+			type="button"
+			aria-label={label}
+			title={label}
+			onClick={onClick}
+			className={cn(accountTextLinkClass, "order-value-edit")}
+		>
+			<span>{children}</span>
+			<PencilIcon className="size-3 shrink-0 text-fg-muted" />
 		</button>
 	);
 }
+
+const ORDER_COLUMN_WIDTHS = [12, 6, 10, 8, 7, 7, 12, 8, 7, 10, 5, 8];
 
 const numCellClass = cn(accountCellClass, accountNumCellClass);
 
