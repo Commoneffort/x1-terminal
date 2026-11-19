@@ -35,11 +35,11 @@ msgstr ""
 msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx:34
+#: src/components/trade/market-overview.tsx:33
 msgid "1 year"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx:137
+#: src/components/trade/market-overview.tsx:136
 msgid "24h"
 msgstr ""
 
@@ -48,20 +48,20 @@ msgstr ""
 msgid "24h Change"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx:144
-#: src/components/trade/market-overview.tsx:154
+#: src/components/trade/market-overview.tsx:143
+#: src/components/trade/market-overview.tsx:153
 msgid "24H VOL"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx:33
+#: src/components/trade/market-overview.tsx:32
 msgid "30 days"
 msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx:118
-msgid "5 levels uses the fast feed. 10, 15 and 20 use the depth feed."
-msgstr ""
+#~ msgid "5 levels uses the fast feed. 10, 15 and 20 use the depth feed."
+#~ msgstr ""
 
-#: src/components/trade/market-overview.tsx:32
+#: src/components/trade/market-overview.tsx:31
 msgid "7 days"
 msgstr ""
 
@@ -160,7 +160,7 @@ msgstr ""
 msgid "Approve trading"
 msgstr ""
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:144
+#: src/components/trade/orderbook/orderbook-panel.tsx:143
 msgid "Ask levels"
 msgstr ""
 
@@ -203,7 +203,7 @@ msgstr ""
 msgid "Balance available to trade"
 msgstr ""
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:176
+#: src/components/trade/orderbook/orderbook-panel.tsx:181
 msgid "Bid levels"
 msgstr ""
 
@@ -761,8 +761,8 @@ msgid "Failed to load open orders."
 msgstr "Error al cargar órdenes abiertas."
 
 #: src/components/trade/orderbook/orderbook-panel.tsx:160
-msgid "Failed to load order book."
-msgstr "Error al cargar libro de órdenes."
+#~ msgid "Failed to load order book."
+#~ msgstr "Error al cargar libro de órdenes."
 
 #: src/components/trade/positions/orders-history-tab.tsx:90
 msgid "Failed to load order history."
@@ -837,7 +837,7 @@ msgstr ""
 msgid "Funding"
 msgstr "Financiamiento"
 
-#: src/components/trade/market-overview.tsx:147
+#: src/components/trade/market-overview.tsx:146
 msgid "FUNDING"
 msgstr ""
 
@@ -973,6 +973,10 @@ msgstr "Precio liq."
 #: src/components/trade/mobile/mobile-history-tab.tsx:91
 #: src/components/trade/positions/history-tab.tsx:222
 msgid "Liquidated"
+msgstr ""
+
+#: src/components/trade/orderbook/orderbook-panel.tsx:115
+msgid "Live fast top of book with refreshed depth at every size."
 msgstr ""
 
 #: src/components/trade/chart/chart-panel.tsx:65
@@ -1309,7 +1313,7 @@ msgstr ""
 msgid "Open Int"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx:145
+#: src/components/trade/market-overview.tsx:144
 msgid "OPEN INT"
 msgstr ""
 
@@ -1321,15 +1325,15 @@ msgstr "Interés abierto"
 msgid "Open Orders"
 msgstr "Órdenes abiertas"
 
-#: src/components/trade/market-overview.tsx:143
+#: src/components/trade/market-overview.tsx:142
 msgid "ORACLE"
 msgstr "ORÁCULO"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:102
+#: src/components/trade/orderbook/orderbook-panel.tsx:99
 msgid "Order Book"
 msgstr "Libro de órdenes"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:122
+#: src/components/trade/orderbook/orderbook-panel.tsx:119
 msgid "Order book depth per side"
 msgstr ""
 
@@ -1504,7 +1508,7 @@ msgstr ""
 #: src/components/trade/chart/token-selector-content.tsx:17
 #: src/components/trade/mobile/mobile-history-tab.tsx:110
 #: src/components/trade/mobile/mobile-orders-tab.tsx:252
-#: src/components/trade/orderbook/orderbook-panel.tsx:134
+#: src/components/trade/orderbook/orderbook-panel.tsx:131
 #: src/components/trade/orderbook/trades-panel.tsx:104
 #: src/components/trade/positions/history-tab.tsx:78
 #: src/components/trade/positions/position-limit-close-modal.tsx:140
@@ -1512,7 +1516,7 @@ msgstr ""
 msgid "Price"
 msgstr "Precio"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:110
+#: src/components/trade/orderbook/orderbook-panel.tsx:107
 msgid "Price grouping"
 msgstr ""
 
@@ -1592,7 +1596,7 @@ msgstr ""
 msgid "Reset to saved"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx:40
+#: src/components/trade/market-overview.tsx:39
 msgid "Resets in"
 msgstr ""
 
@@ -1758,7 +1762,7 @@ msgstr "Firmante no listo"
 #: src/components/trade/mobile/mobile-orders-tab.tsx:256
 #: src/components/trade/mobile/mobile-position-card.tsx:165
 #: src/components/trade/mobile/mobile-twap-tab.tsx:116
-#: src/components/trade/orderbook/orderbook-panel.tsx:136
+#: src/components/trade/orderbook/orderbook-panel.tsx:133
 #: src/components/trade/orderbook/trades-panel.tsx:110
 #: src/components/trade/positions/history-tab.tsx:79
 #: src/components/trade/positions/position-limit-close-modal.tsx:123
@@ -1849,7 +1853,7 @@ msgstr "Spot"
 msgid "Spot Account"
 msgstr ""
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:170
+#: src/components/trade/orderbook/orderbook-panel.tsx:173
 msgid "Spread"
 msgstr "Diferencial"
 
@@ -2046,12 +2050,12 @@ msgstr ""
 msgid "Toggle size mode"
 msgstr "Cambiar modo de tamaño"
 
-#: src/components/trade/market-overview.tsx:157
+#: src/components/trade/market-overview.tsx:156
 msgid "TOKEN"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx:149
-#: src/components/trade/orderbook/orderbook-panel.tsx:139
+#: src/components/trade/orderbook/orderbook-panel.tsx:136
 msgid "Total"
 msgstr "Total"
 
@@ -2109,7 +2113,7 @@ msgstr "Historial de operaciones"
 msgid "Trade Value"
 msgstr "Trade Value"
 
-#: src/components/trade/orderbook/orderbook-panel.tsx:103
+#: src/components/trade/orderbook/orderbook-panel.tsx:100
 msgid "Trades"
 msgstr "Operaciones"
 
@@ -2280,8 +2284,8 @@ msgid "Volume"
 msgstr "Volumen"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx:160
-msgid "Waiting for order book..."
-msgstr "Esperando libro de órdenes..."
+#~ msgid "Waiting for order book..."
+#~ msgstr "Esperando libro de órdenes..."
 
 #: src/components/trade/orderbook/trades-panel.tsx:83
 msgid "Waiting for trades..."
