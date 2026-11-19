@@ -16,7 +16,6 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
 	CheckIcon,
-	CopyIcon,
 	DeviceMobileIcon,
 	KeyIcon,
 	QrCodeIcon,
@@ -26,6 +25,8 @@ import {
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useConnection } from "wagmi";
+import { CopyStateIcon } from "@/components/ui/copy-state-icon";
+import { CopySwapLabel } from "@/components/ui/copy-swap-label";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { shortenAddress } from "@/lib/format";
 import { useAgentWalletActions, useAgentWalletStorage, useExchange, useHyperliquid } from "@/lib/hyperliquid";
@@ -63,8 +64,8 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 	const localAgent = useAgentWalletStorage(env, address);
 	const { clearAgent } = useAgentWalletActions();
 	const approveAgent = useExchange("approveAgent");
-	const { copied: copiedPhoneLink, copy: copyPhoneLink } = useCopyToClipboard(1500);
-	const { copied: copiedPairingCode, copy: copyPairingCode } = useCopyToClipboard(1500);
+	const { copied: copiedPhoneLink, copy: copyPhoneLink } = useCopyToClipboard();
+	const { copied: copiedPairingCode, copy: copyPairingCode } = useCopyToClipboard();
 	const [syncState, setSyncState] = useState<SyncState>({ status: "idle" });
 	const [resetState, setResetState] = useState<ResetState>({ status: "idle" });
 	const [showQr, setShowQr] = useState(false);
@@ -242,7 +243,7 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			</ModalHeader>
 
 			<ModalContent className="space-y-4">
-				<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs">
+				<div className="flex items-center justify-between gap-3 rounded-8 bg-control px-3 py-2 text-xs">
 					<span className="text-fg-muted">
 						<Trans>Using</Trans>
 					</span>
@@ -250,7 +251,7 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 						{address ? (
 							<>
 								<span className="font-mono">{shortenAddress(address)}</span>
-								<span className="text-fg-muted"> · {env}</span>
+								<span className="text-fg-muted"> ({env})</span>
 							</>
 						) : (
 							<Trans>Wallet not connected</Trans>
@@ -269,7 +270,7 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 				)}
 
 				{!isReady && !isLinkExpired && (
-					<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+					<div className="rounded-8 bg-control p-3">
 						<div className="flex items-start gap-3">
 							<ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-brand" weight="duotone" aria-hidden />
 							<div className="min-w-0 space-y-1">
@@ -373,7 +374,7 @@ function ReadySyncPanel({
 
 	return (
 		<div className="space-y-3">
-			<div className="flex items-start gap-2 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
+			<div className="flex items-start gap-2 rounded-8 bg-control p-3">
 				<CheckIcon className="mt-0.5 size-4 shrink-0 text-success" weight="bold" aria-hidden />
 				<div className="min-w-0">
 					<p className="text-sm font-semibold text-fg">
@@ -385,7 +386,7 @@ function ReadySyncPanel({
 				</div>
 			</div>
 
-			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+			<div className="rounded-8 bg-control p-3">
 				<div className="flex items-center justify-between gap-3">
 					<div className="flex min-w-0 items-center gap-2">
 						<KeyIcon className="size-4 shrink-0 text-icon" aria-hidden />
@@ -399,10 +400,10 @@ function ReadySyncPanel({
 						intent="neutral"
 						size="sm"
 						onClick={onCopyPairingCode}
-						iconLeft={copiedPairingCode ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+						iconLeft={<CopyStateIcon copied={copiedPairingCode} className="size-3.5" />}
 						className="shrink-0"
 					>
-						{copiedPairingCode ? <Trans>Copied</Trans> : <Trans>Copy code</Trans>}
+						<CopySwapLabel copied={copiedPairingCode} idle={<Trans>Copy code</Trans>} done={<Trans>Copied</Trans>} />
 					</Button>
 				</div>
 				<p className="mt-2 select-all rounded-8 border border-stroke-weak bg-background px-3 py-2 text-center font-mono text-base font-semibold tracking-[0.12em] text-fg">
@@ -410,7 +411,7 @@ function ReadySyncPanel({
 				</p>
 			</div>
 
-			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+			<div className="rounded-8 bg-control p-3">
 				<div className="flex items-center justify-between gap-3">
 					<div className="min-w-0">
 						<p className="text-sm font-semibold text-fg">
@@ -446,10 +447,10 @@ function ReadySyncPanel({
 					intent="neutral"
 					size="sm"
 					onClick={onCopyPhoneLink}
-					iconLeft={copiedPhoneLink ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+					iconLeft={<CopyStateIcon copied={copiedPhoneLink} className="size-3.5" />}
 					className="w-full"
 				>
-					{copiedPhoneLink ? <Trans>Copied</Trans> : <Trans>Copy phone link</Trans>}
+					<CopySwapLabel copied={copiedPhoneLink} idle={<Trans>Copy phone link</Trans>} done={<Trans>Copied</Trans>} />
 				</Button>
 				<Button
 					type="button"
@@ -530,7 +531,7 @@ function ResetMobileAccessPanel({
 			: null;
 
 	return (
-		<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+		<div className="rounded-8 bg-control p-3">
 			<div className="flex items-start justify-between gap-3">
 				<div className="min-w-0 space-y-1">
 					<p className="text-sm font-semibold text-fg">

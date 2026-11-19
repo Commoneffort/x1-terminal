@@ -1,8 +1,12 @@
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import type { BookLevel } from "@/lib/trade/orderbook";
+import { isLevelResized, playFlash } from "@/lib/ui/flash";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
+
+const LEVEL_FLASH_KEYFRAMES: Keyframe[] = [{ opacity: 0.2 }, { opacity: 0.2, offset: 0.35 }, { opacity: 0 }];
+const LEVEL_FLASH_OPTIONS: KeyframeAnimationOptions = { duration: 700, easing: "ease-out" };
 
 interface Props {
 	level: BookLevel;
@@ -17,6 +21,16 @@ function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuo
 	const { setSelectedPrice } = useOrderbookActions();
 	const depthPct = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
 	const isAsk = side === "ask";
+	const flashRef = useRef<HTMLDivElement>(null);
+	const prevLevelRef = useRef<{ price: number; size: number } | null>(null);
+
+	useEffect(() => {
+		const next = { price: level.price, size: level.size };
+		if (isLevelResized(prevLevelRef.current, next)) {
+			playFlash(flashRef.current, LEVEL_FLASH_KEYFRAMES, LEVEL_FLASH_OPTIONS);
+		}
+		prevLevelRef.current = next;
+	}, [level.price, level.size]);
 
 	const sizeValue = showInQuote ? level.size * level.price : level.size;
 	const totalValue = showInQuote ? level.total * level.price : level.total;
@@ -26,24 +40,28 @@ function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuo
 	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
 
 	return (
-		<div className="relative shrink-0 hover:bg-fill-hover cursor-pointer group">
+		<div className="group relative h-5 shrink-0 cursor-pointer transition-colors duration-150 hover:bg-control/50 motion-reduce:transition-none">
 			<div
-				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
-				style={{ width: `${depthPct}%`, [isAsk ? "right" : "left"]: 0, [isAsk ? "left" : "right"]: "auto" }}
+				className={cn("pointer-events-none absolute inset-y-0 left-0", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
+				style={{ width: `${depthPct}%` }}
 			/>
-			<div className="grid grid-cols-3 gap-1 text-2xs tabular-nums py-0.5 px-2 relative z-10">
+			<div
+				ref={flashRef}
+				className={cn("pointer-events-none absolute inset-0 opacity-0", isAsk ? "bg-market-down" : "bg-market-up")}
+			/>
+			<div className="relative z-10 grid h-full grid-cols-3 items-center gap-2 px-3 text-xs font-normal tabular-nums">
 				<button
 					type="button"
 					onClick={() => setSelectedPrice(level.price)}
 					className={cn(
-						"text-left justify-start font-medium",
-						isAsk ? "text-error hover:text-error" : "text-success hover:text-success",
+						"cursor-pointer truncate text-left focus-visible:underline focus-visible:outline-none",
+						isAsk ? "text-market-down" : "text-market-up",
 					)}
 				>
 					{formatNumber(level.price, priceDecimals)}
 				</button>
-				<div className="text-right text-fg group-hover:text-fg">{sizeText}</div>
-				<div className="text-right text-fg group-hover:text-fg">{totalText}</div>
+				<div className="truncate text-right text-fg-secondary">{sizeText}</div>
+				<div className="truncate text-right text-fg-secondary">{totalText}</div>
 			</div>
 		</div>
 	);

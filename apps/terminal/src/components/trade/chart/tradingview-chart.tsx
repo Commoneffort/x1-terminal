@@ -1,8 +1,4 @@
-import { browserChartTimezone } from "@/lib/chart/timezone";
-import { setChartResolution, useChartIntervalStore } from "@/stores/use-chart-interval-store";
-import { useChartMarksStore, toggleChartMarks, chartMarksLabel } from "@/stores/use-chart-marks-store";
-import { useTradingViewLines } from "./use-tradingview-lines";
-import { useExecutionFills } from "./use-execution-fills";
+import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
@@ -12,6 +8,9 @@ import {
 	getLoadingScreenColors,
 	getToolbarBgColor,
 } from "@/lib/chart/theme-colors";
+import { browserChartTimezone } from "@/lib/chart/timezone";
+import { setChartResolution, useChartIntervalStore } from "@/stores/use-chart-interval-store";
+import { chartMarksLabel, toggleChartMarks, useChartMarksStore } from "@/stores/use-chart-marks-store";
 import type { ActionId, IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
@@ -26,9 +25,11 @@ import {
 	DEFAULT_CHART_THEME,
 } from "./constants";
 import { createDatafeed } from "./datafeed";
+import { useExecutionFills } from "./use-execution-fills";
+import { useTradingViewLines } from "./use-tradingview-lines";
 
 interface Props {
- positionDex?: string;
+	positionDex?: string;
 	symbol?: string;
 	interval?: string;
 	theme?: "light" | "dark";
@@ -36,21 +37,27 @@ interface Props {
 }
 
 export function TradingViewChart({
- positionDex,
+	positionDex,
 	symbol = DEFAULT_CHART_SYMBOL,
 	interval,
 	theme = DEFAULT_CHART_THEME,
 	onSwitchToDefault,
 }: Props) {
 	const chartKey = `${symbol}:${interval}:${theme}`;
- const [readyWidget, setReadyWidget] = useState<{ widget: IChartingLibraryWidget; key: string } | null>(null);
- useTradingViewLines(readyWidget?.key === chartKey ? readyWidget.widget : null, symbol, positionDex);
- const hidden = useChartMarksStore(state => state.hidden);
- const fills = useExecutionFills();
- const fillsRef = useRef(fills);
- fillsRef.current = hidden ? [] : fills;
- useEffect(() => { if (chartReadyRef.current && widgetRef.current) { const chart = widgetRef.current.activeChart(); chart.clearMarks(); chart.refreshMarks(); } }, [fills, hidden]);
- const containerRef = useRef<HTMLDivElement>(null);
+	const [readyWidget, setReadyWidget] = useState<{ widget: IChartingLibraryWidget; key: string } | null>(null);
+	useTradingViewLines(readyWidget?.key === chartKey ? readyWidget.widget : null, symbol, positionDex);
+	const hidden = useChartMarksStore((state) => state.hidden);
+	const fills = useExecutionFills();
+	const fillsRef = useRef(fills);
+	fillsRef.current = hidden ? [] : fills;
+	useEffect(() => {
+		if (chartReadyRef.current && widgetRef.current) {
+			const chart = widgetRef.current.activeChart();
+			chart.clearMarks();
+			chart.refreshMarks();
+		}
+	}, [fills, hidden]);
+	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const cssUrlRef = useRef<string | null>(null);
 	const chartReadyRef = useRef(false);
@@ -60,7 +67,7 @@ export function TradingViewChart({
 	useEffect(() => {
 		if (!containerRef.current) return;
 		let disposed = false;
-  let stopIntervalTracking: (() => void) | undefined;
+		let stopIntervalTracking: (() => void) | undefined;
 		chartReadyRef.current = false;
 
 		const initWidget = async () => {
@@ -92,7 +99,12 @@ export function TradingViewChart({
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
-					datafeed: createDatafeed(() => fillsRef.current),
+					datafeed: createDatafeed(
+						() => fillsRef.current,
+						() => {
+							if (chartReadyRef.current) widgetRef.current?.activeChart().resetData();
+						},
+					),
 					symbol: symbol,
 					interval: (interval ?? useChartIntervalStore.getState().resolution) as ResolutionString,
 					locale: CHART_LOCALE,
@@ -110,10 +122,21 @@ export function TradingViewChart({
 					toolbar_bg: toolbarBg,
 					custom_css_url: customCssUrl,
 					studies_overrides: {},
-     context_menu: { items_processor: async (items, factory) => [
-      factory.createAction({ actionId: "Chart.CustomActionId" as ActionId, label: chartMarksLabel(), onExecute: toggleChartMarks }),
-      ...items.filter(item => !("getState" in item) || (item.getState().actionId !== "Chart.Marks.ToggleVisibility" && !/^(hide|show) marks on bars$/i.test(item.getState().label))),
-     ] },
+					context_menu: {
+						items_processor: async (items, factory) => [
+							factory.createAction({
+								actionId: "Chart.CustomActionId" as ActionId,
+								label: chartMarksLabel(),
+								onExecute: toggleChartMarks,
+							}),
+							...items.filter(
+								(item) =>
+									!("getState" in item) ||
+									(item.getState().actionId !== "Chart.Marks.ToggleVisibility" &&
+										!/^(hide|show) marks on bars$/i.test(item.getState().label)),
+							),
+						],
+					},
 					favorites: {
 						intervals: CHART_FAVORITE_INTERVALS,
 					},
@@ -123,13 +146,13 @@ export function TradingViewChart({
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
 					chartReadyRef.current = true;
-     const chart = widget.activeChart();
-     const intervalChanged = (resolution: ResolutionString) => setChartResolution(resolution);
-     chart.onIntervalChanged().subscribe(null, intervalChanged);
-     stopIntervalTracking = () => chart.onIntervalChanged().unsubscribe(null, intervalChanged);
-     widget.activeChart().clearMarks();
-     widget.activeChart().refreshMarks();
-     setReadyWidget({ widget, key: `${symbol}:${interval}:${theme}` });
+					const chart = widget.activeChart();
+					const intervalChanged = (resolution: ResolutionString) => setChartResolution(resolution);
+					chart.onIntervalChanged().subscribe(null, intervalChanged);
+					stopIntervalTracking = () => chart.onIntervalChanged().unsubscribe(null, intervalChanged);
+					chart.clearMarks();
+					chart.refreshMarks();
+					setReadyWidget({ widget, key: `${symbol}:${interval}:${theme}` });
 				});
 
 				if (onSwitchToDefaultRef.current) {
@@ -138,26 +161,27 @@ export function TradingViewChart({
 
 						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
 						btn.style.cssText =
-							"display:inline-flex;align-items:center;gap:6px;padding:0 4px;cursor:default;height:100%;";
+							"display:inline-flex;align-items:center;gap:4px;padding:0 4px;cursor:default;height:100%;";
 
 						const tvLabel = document.createElement("span");
-						tvLabel.textContent = "TradingView";
+						tvLabel.textContent = t`TradingView`;
 						tvLabel.dataset.htActive = "true";
-						tvLabel.style.cssText = "font-size:12px;color:var(--tv-fg,inherit);";
+						tvLabel.style.cssText =
+							"display:inline-flex;align-items:center;height:20px;padding:0 4px;font-size:12px;font-weight:400;color:var(--tv-fg);";
 
 						const sep = document.createElement("span");
 						sep.style.cssText =
-							"display:inline-block;width:1px;height:12px;background:var(--tv-color-toolbar-divider-background,rgba(128,128,128,0.3));align-self:center;flex-shrink:0;";
+							"display:inline-block;width:1px;height:12px;background:var(--tv-border);align-self:center;flex-shrink:0;";
 
 						const defaultLabel = document.createElement("span");
-						defaultLabel.textContent = "Default";
+						defaultLabel.textContent = t`Default`;
 						defaultLabel.style.cssText =
-							"font-size:12px;font-weight:400;color:var(--tv-muted-fg,rgba(128,128,128,0.8));cursor:pointer;";
+							"display:inline-flex;align-items:center;height:20px;padding:0 4px;font-size:12px;font-weight:400;color:var(--tv-muted-fg);border-radius:4px;cursor:pointer;";
 						defaultLabel.onpointerover = () => {
-							defaultLabel.style.color = "var(--tv-fg,inherit)";
+							defaultLabel.style.color = "var(--tv-fg)";
 						};
 						defaultLabel.onpointerout = () => {
-							defaultLabel.style.color = "var(--tv-muted-fg,rgba(128,128,128,0.8))";
+							defaultLabel.style.color = "var(--tv-muted-fg)";
 						};
 						defaultLabel.onclick = () => {
 							onSwitchToDefaultRef.current?.();
@@ -177,8 +201,8 @@ export function TradingViewChart({
 
 		return () => {
 			disposed = true;
-   stopIntervalTracking?.();
-   setReadyWidget(null);
+			stopIntervalTracking?.();
+			setReadyWidget(null);
 			if (widgetRef.current) {
 				widgetRef.current.remove();
 				widgetRef.current = null;

@@ -37,14 +37,19 @@ export function readAgentFromStorage(env: HyperliquidEnv, userAddress: string): 
 	try {
 		const key = getStorageKey(env, userAddress);
 		let raw: string | null = null;
-        try { raw = localStorage.getItem(key); } catch {}
-        raw ??= sessionStorage.getItem(key);
+		try {
+			raw = localStorage.getItem(key);
+		} catch {}
+		raw ??= sessionStorage.getItem(key);
 		if (!raw) return null;
 
 		const parsed = JSON.parse(raw);
 		const agent = agentWalletSchema.parse(parsed);
-        try { localStorage.setItem(key, JSON.stringify(agent)); sessionStorage.removeItem(key); } catch {}
-        return agent;
+		try {
+			localStorage.setItem(key, JSON.stringify(agent));
+			sessionStorage.removeItem(key);
+		} catch {}
+		return agent;
 	} catch {
 		return null;
 	}
@@ -67,8 +72,12 @@ export function writeAgentToStorage(
 			...metadata,
 		};
 		const serialized = JSON.stringify(agentWalletSchema.parse(data));
-        try { localStorage.setItem(key, serialized); sessionStorage.removeItem(key); }
-        catch { sessionStorage.setItem(key, serialized); }
+		try {
+			localStorage.setItem(key, serialized);
+			sessionStorage.removeItem(key);
+		} catch {
+			sessionStorage.setItem(key, serialized);
+		}
 		window.dispatchEvent(new StorageEvent("storage", { key }));
 	} catch {
 		// Silent fail for storage errors
@@ -79,8 +88,12 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 	if (typeof window === "undefined") return;
 
 	const key = getStorageKey(env, userAddress);
-	try { localStorage.removeItem(key); } catch {}
-    try { sessionStorage.removeItem(key); } catch {}
+	try {
+		localStorage.removeItem(key);
+	} catch {}
+	try {
+		sessionStorage.removeItem(key);
+	} catch {}
 	window.dispatchEvent(new StorageEvent("storage", { key }));
 }
 

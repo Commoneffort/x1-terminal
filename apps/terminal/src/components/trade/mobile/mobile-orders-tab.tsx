@@ -1,17 +1,16 @@
-import { canAmendRestingOrder, canAmendOrderPrice } from "@/lib/trade/amend-order";
-import { EditOrderModal } from "../positions/edit-order-modal";
-import {useTradingAccount} from "@/hooks/use-trading-account";
 import { Badge, Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
+import { canAmendOrderPrice, canAmendRestingOrder } from "@/lib/trade/amend-order";
 import {
 	getOrderTypeConfig,
 	getSideLabel,
@@ -25,6 +24,7 @@ import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
+import { EditOrderModal } from "../positions/edit-order-modal";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -32,6 +32,7 @@ interface Props {
 }
 
 type CancelScope = "row" | "all";
+type EditField = "amount" | "value" | "price";
 
 export function MobileOrdersTab({ className }: Props) {
 	const { address, isConnected } = useTradingAccount();
@@ -59,12 +60,12 @@ export function MobileOrdersTab({ className }: Props) {
 
 	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 
-	const [editing, setEditing] = useState<{oid:number;field:"amount"|"value"|"price"}|null>(null);
- const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
+	const [editing, setEditing] = useState<{ oid: number; field: EditField } | null>(null);
+	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 
 	const openOrders = openOrdersEvent?.orders ?? [];
- const editingOrder = editing ? openOrders.find(order => order.oid === editing.oid) : undefined;
+	const editingOrder = editing ? openOrders.find((order) => order.oid === editing.oid) : undefined;
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
 		if (ordersToCancel.length === 0) return;
@@ -125,7 +126,7 @@ export function MobileOrdersTab({ className }: Props) {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
+			<div className="flex-1 flex items-center justify-center px-3 py-6 text-center text-xs text-fg-muted">
 				{t`Connect your wallet to view open orders.`}
 			</div>
 		);
@@ -133,7 +134,7 @@ export function MobileOrdersTab({ className }: Props) {
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
+			<div className="flex-1 flex flex-col items-center justify-center px-3 py-6 text-center text-xs text-market-down">
 				<span>{t`Failed to load open orders.`}</span>
 				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 			</div>
@@ -142,11 +143,8 @@ export function MobileOrdersTab({ className }: Props) {
 
 	if (status === "active" && openOrders.length === 0) {
 		return (
-			<div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-				<div className="size-12 rounded-full flex items-center justify-center bg-surface">
-					<ListIcon className="size-6 text-fg-muted" />
-				</div>
-				<p className="text-sm text-fg-muted">{t`No open orders.`}</p>
+			<div className="flex-1 flex items-center justify-center px-3 py-6 text-center text-xs text-fg-muted">
+				{t`No open orders.`}
 			</div>
 		);
 	}
@@ -154,23 +152,22 @@ export function MobileOrdersTab({ className }: Props) {
 	return (
 		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
-					<ListNumbersIcon className="size-3" />
-					{t`Open Orders`}
-					<span className="font-semibold text-brand tabular-nums">{headerCount}</span>
+				<div className="shrink-0 h-10 px-3 flex items-center gap-2">
+					<span className="text-2xs uppercase tracking-micro text-fg-muted">{t`Open Orders`}</span>
+					<span className="text-xs tabular-nums text-fg">{headerCount}</span>
 					<Button
-						variant="ghost"
-						intent="error"
+						variant="secondary"
+						intent="down"
 						size="sm"
-						className="ml-auto touch-target"
+						className="ml-auto"
 						onClick={handleCancelAll}
 						disabled={pendingScopes.has("all") || openOrders.length === 0}
 					>
 						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel All`}
 					</Button>
 				</div>
-				{actionError && <div className="px-3 pb-1 text-xs text-error">{actionError}</div>}
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+				{actionError && <p className="px-3 pb-2 text-xs text-market-down">{actionError}</p>}
+				<div className="flex-1 min-h-0 overflow-y-auto divide-y divide-stroke-faint border-t border-stroke-faint">
 					{openOrders.map((order) => (
 						<MobileOrderCard
 							key={order.oid}
@@ -180,45 +177,60 @@ export function MobileOrdersTab({ className }: Props) {
 							isCancelling={cancellingOids.has(order.oid)}
 							onCancel={handleCancelRow}
 							onSelectMarket={handleSelectMarket}
-       onEdit={field => setEditing({oid:order.oid,field})}
+							onEdit={(field) => setEditing({ oid: order.oid, field })}
 						/>
 					))}
 				</div>
 			</div>
-   {editing && editingOrder && <EditOrderModal key={`${address}:${editing.oid}`} order={editingOrder} field={editing.field} onClose={() => setEditing(null)} />}
+			{editing && editingOrder && (
+				<EditOrderModal
+					key={`${address}:${editing.oid}`}
+					order={editingOrder}
+					field={editing.field}
+					onClose={() => setEditing(null)}
+				/>
+			)}
 		</Skeleton>
 	);
 }
 
 interface MobileOrderCardProps {
- onEdit: (field: "amount" | "value" | "price") => void;
 	order: OpenOrder;
 	szDecimals: number;
 	kind: MarketKind | undefined;
 	isCancelling: boolean;
 	onCancel: (orders: OpenOrder[]) => void;
 	onSelectMarket: (marketName: string, side: Side) => void;
+	onEdit: (field: EditField) => void;
 }
 
-function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSelectMarket, onEdit }: MobileOrderCardProps) {
+function MobileOrderCard({
+	order,
+	szDecimals,
+	kind,
+	isCancelling,
+	onCancel,
+	onSelectMarket,
+	onEdit,
+}: MobileOrderCardProps) {
 	const typeConfig = getOrderTypeConfig(order);
 	const sideLabel = getSideLabel(order.side, kind);
 	const isLong = order.side === "B";
 	const side: Side = isLong ? "buy" : "sell";
 
 	return (
-		<div className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
-			<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
-				<div className="flex items-center gap-2">
+		<div className="flex flex-col gap-3 px-3 py-3">
+			<div className="flex items-center justify-between gap-2">
+				<div className="flex min-w-0 items-center gap-2">
 					<AssetBadge
+						appearance="plain"
 						coin={order.coin}
 						side={side}
 						onClick={() => onSelectMarket(order.coin, side)}
-						nameClassName="text-sm"
+						className="min-h-8"
+						nameClassName="text-base font-medium text-fg"
 					/>
-					<Badge tone={isLong ? "success" : "error"} size="xs">
-						{sideLabel}
-					</Badge>
+					<span className={cn("text-xs font-medium", isLong ? "text-market-up" : "text-market-down")}>{sideLabel}</span>
 				</div>
 				<div className="flex items-center gap-2">
 					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap" title={typeConfig.fullLabel}>
@@ -227,11 +239,15 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 						) : null}
 						<span className="text-fg">{typeConfig.executionLabel}</span>
 					</span>
-					{order.reduceOnly && <span className="text-2xs uppercase text-fg-muted">{t`RO`}</span>}
+					{order.reduceOnly && (
+						<Badge tone="neutral" size="xs">
+							{t`RO`}
+						</Badge>
+					)}
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 divide-x divide-stroke-weak">
+			<div className="grid grid-cols-3 gap-3">
 				<MetricCell
 					label={t`Price`}
 					value={isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
@@ -244,19 +260,53 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 							: formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })
 					}
 				/>
-				<MetricCell label={t`Trigger`} value={order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER} />
+				<MetricCell label={t`Trigger`} value={order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER} align="end" />
 			</div>
 
-   {canAmendOrderPrice(order) && <div className="flex gap-4 px-3 pt-2 text-xs text-brand">{canAmendRestingOrder(order)&&<><button type="button" disabled={isCancelling} onClick={() => onEdit("amount")}>Edit amount</button><button type="button" disabled={isCancelling} onClick={() => onEdit("value")}>Edit value</button></>}<button type="button" disabled={isCancelling} onClick={() => onEdit("price")}>Edit price</button></div>}
-			<div className="flex items-center justify-between px-3 py-1.5">
+			{canAmendOrderPrice(order) && (
+				<div className="flex flex-wrap items-center gap-2">
+					{canAmendRestingOrder(order) && (
+						<>
+							<Button
+								variant="secondary"
+								intent="neutral"
+								size="sm"
+								disabled={isCancelling}
+								onClick={() => onEdit("amount")}
+							>
+								{t`Edit amount`}
+							</Button>
+							<Button
+								variant="secondary"
+								intent="neutral"
+								size="sm"
+								disabled={isCancelling}
+								onClick={() => onEdit("value")}
+							>
+								{t`Edit value`}
+							</Button>
+						</>
+					)}
+					<Button
+						variant="secondary"
+						intent="neutral"
+						size="sm"
+						disabled={isCancelling}
+						onClick={() => onEdit("price")}
+					>
+						{t`Edit price`}
+					</Button>
+				</div>
+			)}
+
+			<div className="flex items-center justify-between gap-2">
 				<span className="text-xs text-fg-muted tabular-nums">
 					{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 				</span>
 				<Button
-					variant="ghost"
-					intent="error"
+					variant="secondary"
+					intent="neutral"
 					size="sm"
-					className="touch-target"
 					onClick={() => onCancel([order])}
 					disabled={isCancelling}
 					iconLeft={isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}

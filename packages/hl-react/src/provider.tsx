@@ -28,7 +28,7 @@ export interface HyperliquidContextValue {
 	builderConfig: BuilderConfig;
 	agentName: string;
 	clientKey: string;
- vaultAddress?: `0x${string}`;
+	vaultAddress?: `0x${string}`;
 }
 
 export const HyperliquidContext = createContext<HyperliquidContextValue | null>(null);
@@ -38,7 +38,7 @@ export interface HyperliquidProviderProps {
 	children: ReactNode;
 	env: HyperliquidEnv;
 	userAddress: `0x${string}` | undefined;
- vaultAddress?: `0x${string}`;
+	vaultAddress?: `0x${string}`;
 	builderConfig: BuilderConfig;
 	agentName?: string;
 }
@@ -69,7 +69,7 @@ export function HyperliquidProvider({
 	children,
 	env,
 	userAddress,
- vaultAddress,
+	vaultAddress,
 	builderConfig,
 	agentName = "app",
 }: HyperliquidProviderProps) {
@@ -109,7 +109,7 @@ export function HyperliquidProvider({
 		builderConfig,
 		agentName,
 		clientKey,
-  vaultAddress,
+		vaultAddress,
 	};
 
 	return (

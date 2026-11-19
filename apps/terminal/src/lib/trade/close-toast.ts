@@ -12,5 +12,5 @@ export function buildClosePositionDescription({ size, szDecimals, coin, unrealiz
 	const sizeText = formatToken(size, { decimals: szDecimals, symbol: coin });
 	const pnlText = formatUSD(unrealizedPnl, { signDisplay: "exceptZero" });
 	const roeText = formatPercent(roe, 1);
-	return `${sizeText} · ${pnlText} (${roeText})`;
+	return `${sizeText}, PNL ${pnlText} (${roeText})`;
 }

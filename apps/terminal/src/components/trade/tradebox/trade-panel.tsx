@@ -10,7 +10,6 @@ import { getOrderPrice } from "@/domain/trade/order/price";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
-import { cn } from "@/lib/cn";
 import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
@@ -49,6 +48,7 @@ import {
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
+import { AutoMarketWarning } from "../auto/auto-market-warning";
 import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
@@ -78,11 +78,11 @@ export function TradePanel() {
 	const markPx = toNumberOrZero(market?.markPx);
 	const sizeMode = useSizeMode();
 	const sizeInput = useOrderSize();
- const reduceOnly = useReduceOnly();
+	const reduceOnly = useReduceOnly();
 
 	const {
 		isSpotMarket,
-  isReducing,
+		isReducing,
 		baseToken,
 		quoteToken,
 		spotBalance,
@@ -176,12 +176,22 @@ export function TradePanel() {
 	const feeRate = isTakerOrderType(orderType) ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
 
-	const { marginRequired: openingMarginRequired, estimatedFee } = getOrderMetrics({ sizeValue, price, leverage, feeRate });
+	const { marginRequired: openingMarginRequired, estimatedFee } = getOrderMetrics({
+		sizeValue,
+		price,
+		leverage,
+		feeRate,
+	});
 	const marginRequired = isReducing ? 0 : openingMarginRequired;
- const { liqPrice: openingLiqPrice, liqWarning: openingLiqWarning } = getLiquidationInfo({ price, sizeValue, leverage, side });
+	const { liqPrice: openingLiqPrice, liqWarning: openingLiqWarning } = getLiquidationInfo({
+		price,
+		sizeValue,
+		leverage,
+		side,
+	});
 
- const liqPrice = isReducing ? null : openingLiqPrice;
- const liqWarning = !isReducing && openingLiqWarning;
+	const liqPrice = isReducing ? null : openingLiqPrice;
+	const liqWarning = !isReducing && openingLiqWarning;
 
 	const needsAgentApproval = !isAgentReady;
 	const isReadyToTrade = isAgentReady;
@@ -212,7 +222,7 @@ export function TradePanel() {
 				})
 			: perpInput(baseInput, {
 					orderType,
-     reduceOnly: isReducing,
+					reduceOnly: isReducing,
 					markPx,
 					maxSize,
 					usesTriggerPrice: usesLimitPriceForOrder(orderType) ? false : isTriggerOrderType(orderType),
@@ -294,7 +304,7 @@ export function TradePanel() {
 	}
 
 	const buttonContent = useButtonContent({
-  reduceOnly: isReducing,
+		reduceOnly: isReducing,
 		isConnected,
 		needsChainSwitch,
 		isSwitchingChain: switchChain.isPending,
@@ -360,7 +370,7 @@ export function TradePanel() {
 	}
 
 	return (
-		<div className="flex flex-col bg-surface">
+		<div className="flex flex-col">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
 				onOpenChange={(open) => {
@@ -380,20 +390,21 @@ export function TradePanel() {
 				onApply={handleMarginApply}
 			/>
 
-			<div className="flex flex-col gap-5 px-3 py-3">
-				<TradeHeader
-					orderType={orderType}
-					side={side}
-					sideLabels={sideLabels}
-					marketKind={market?.kind}
-					onOrderTypeChange={setOrderType}
-					onSideChange={setSide}
-					marginMode={marginMode}
-					leverage={leverage}
-					onMarginLeverageClick={() => setActiveModal("marginMode")}
-					isLeveraged={capabilities.isLeveraged}
-				/>
+			<TradeHeader
+				orderType={orderType}
+				side={side}
+				sideLabels={sideLabels}
+				marketKind={market?.kind}
+				onOrderTypeChange={setOrderType}
+				onSideChange={setSide}
+				marginMode={marginMode}
+				leverage={leverage}
+				onMarginLeverageClick={() => setActiveModal("marginMode")}
+				isLeveraged={capabilities.isLeveraged}
+				insetClassName="px-3"
+			/>
 
+			<div className="flex flex-col gap-4 px-3 pt-3 pb-3">
 				<TradeFormFields
 					price={price}
 					positionSize={positionSize}
@@ -404,26 +415,28 @@ export function TradePanel() {
 					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
 				/>
 
-				<div className="flex flex-col gap-3 pt-5 pb-1">
+				<AutoMarketWarning
+					coin={market?.name}
+					label={market?.shortName ?? market?.name ?? ""}
+					isPerp={!!market && market.kind !== "spot"}
+				/>
+
+				<div className="flex flex-col gap-2">
 					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
-						<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
+						<div className="text-xs text-market-down">{validation.errors.join(" • ")}</div>
 					)}
 
-					{approvalError && <div className="text-xs text-error">{approvalError}</div>}
+					{approvalError && <div className="text-xs text-market-down">{approvalError}</div>}
 
 					<Button
 						variant="filled"
-						size="xs"
-						intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
+						size="md"
+						intent={getCtaIntent(buttonContent.variant)}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
-						className={cn(
-							"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
-							buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
-							buttonContent.variant === "sell" && "text-background",
-						)}
+						className="w-full"
 						aria-label={buttonContent.text}
-						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
+						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-4 animate-spin" /> : undefined}
 					>
 						{buttonContent.text}
 					</Button>
@@ -446,4 +459,10 @@ function getSwapTargetToken(market: NonNullable<ReturnType<typeof useSelectedMar
 	if (quoteToken === DEFAULT_QUOTE_TOKEN) return null;
 
 	return quoteToken;
+}
+
+function getCtaIntent(variant: string | undefined): "up" | "down" | "brand" {
+	if (variant === "buy") return "up";
+	if (variant === "sell") return "down";
+	return "brand";
 }

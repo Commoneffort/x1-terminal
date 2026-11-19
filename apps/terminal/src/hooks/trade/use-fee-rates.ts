@@ -1,4 +1,3 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
 import { type MarketKind, useInfo } from "@hypeterminal/hl-react";
 import {
 	ORDER_FEE_RATE_MAKER,
@@ -6,6 +5,7 @@ import {
 	ORDER_FEE_RATE_SPOT_TAKER,
 	ORDER_FEE_RATE_TAKER,
 } from "@/config/trade";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 
 interface FeeRates {
 	takerRate: number;

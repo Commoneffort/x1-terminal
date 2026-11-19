@@ -1,32 +1,165 @@
-import { RabbyIcon } from "@/components/icons/rabby-icon";
-import { Modal, ModalContent, ModalPopup } from "@hypeterminal/ui";
-import { useState } from "react";
+import { Button, Modal, ModalContent, ModalPopup } from "@hypeterminal/ui";
+import { useId, useState } from "react";
 import { useConnect, useConnectors } from "wagmi";
+import { WalletLogo } from "./wallet-logo";
 
-export function WalletModal({ open, onOpenChange, embedded = false }: { open: boolean; onOpenChange: (open: boolean) => void; embedded?: boolean }) {
- const connectors = useConnectors();
- const { mutateAsync: connect, isPending } = useConnect();
- const [error, setError] = useState<string | null>(null);
- const [acknowledged, setAcknowledged] = useState(false);
- const content = <ModalContent>
-   <h2 className="text-lg font-semibold">Connect to X1 Terminal</h2>
-   <p className="my-3 text-sm text-fg-muted">Choose your wallet. Your Hyperliquid account uses an Ethereum address.</p>
-   <label className="flex gap-2 text-xs text-fg-muted my-4">
-    <input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)} />
-    For X1: I understand my account is derived from my X1 signature. Withdrawals are signed by this derived key. I must use the same wallet and signature to recover this account.
-   </label>
-   <div className="flex flex-col gap-3">
-    {connectors.filter(c => c.id === "rabby" || c.id === "phantom" || c.id === "x1").map(c => <button key={c.uid}
-     className="rounded border border-stroke-weak p-4 text-left hover:bg-fill-hover disabled:opacity-40"
-     disabled={isPending || (c.id === "x1" && !acknowledged)}
-     onClick={async () => { setError(null); try { await connect({ connector: c }); onOpenChange(false); } catch (e) { setError(e instanceof Error ? e.message : "Connection failed"); } }}>
-     <span className="inline-flex items-center gap-2 font-semibold">{c.id === "rabby" && <RabbyIcon className="size-6" />}{c.name}</span>
-     <span className="block text-xs text-fg-muted mt-1">{c.id === "rabby" ? "Ledger supported · select your Ledger account in Rabby" : c.id === "x1" ? "Derived from your X1 signature · session reconnect" : "Ethereum provider · EIP-712 signing"}</span>
-    </button>)}
-   </div>
-   <p className="mt-3 text-xs text-fg-muted">For Ledger: select your hardware account in Rabby, unlock your Ledger and open its Ethereum app. Review and approve signing requests on the device.</p>
-   {error && <p role="alert" className="mt-3 text-sm text-error">{error}</p>}
-  {embedded && <button type="button" onClick={() => onOpenChange(false)} className="mt-4 w-full text-xs text-fg-muted">Back to withdrawal</button>}
-  </ModalContent>;
- return embedded ? content : <Modal open={open} onOpenChange={onOpenChange}><ModalPopup size="sm">{content}</ModalPopup></Modal>;
+interface Props {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	embedded?: boolean;
+}
+
+const walletOptionClass =
+	"group flex w-full items-center gap-3 rounded-8 bg-control px-3 py-3 text-left transition-colors duration-150 hover:bg-control-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:hover:bg-control motion-reduce:transition-none";
+
+export function WalletModal({ open, onOpenChange, embedded = false }: Props) {
+	const connectors = useConnectors();
+	const { mutateAsync: connect, isPending } = useConnect();
+	const [error, setError] = useState<string | null>(null);
+	const [step, setStep] = useState<"choose" | "x1">("choose");
+	const titleId = useId();
+	const wallets = connectors.filter((c) => c.id === "rabby" || c.id === "phantom" || c.id === "x1");
+	const x1 = wallets.find((c) => c.id === "x1");
+
+	function handleOpenChange(next: boolean) {
+		if (!next) {
+			setStep("choose");
+			setError(null);
+		}
+		onOpenChange(next);
+	}
+
+	async function handleConnect(connector: (typeof wallets)[number]) {
+		setError(null);
+		try {
+			await connect({ connector });
+			handleOpenChange(false);
+		} catch (e) {
+			setError(getConnectError(e, connector.id));
+		}
+	}
+
+	function handleSelect(connector: (typeof wallets)[number]) {
+		if (connector.id === "x1") {
+			setError(null);
+			setStep("x1");
+			return;
+		}
+		handleConnect(connector);
+	}
+
+	const chooseStep = (
+		<>
+			<div className="flex flex-col gap-1 pr-10">
+				<h2 id={titleId} className="text-base font-medium text-fg">
+					Connect to X1 Terminal
+				</h2>
+				<p className="text-xs text-fg-muted text-pretty">
+					Choose your wallet. Your Hyperliquid account uses an Ethereum address.
+				</p>
+			</div>
+			<div className="flex flex-col gap-2">
+				{wallets.map((c) => (
+					<button
+						key={c.uid}
+						type="button"
+						className={walletOptionClass}
+						disabled={isPending}
+						onClick={() => handleSelect(c)}
+					>
+						<span className="shrink-0 group-disabled:opacity-50">
+							<WalletLogo connector={c} size={36} />
+						</span>
+						<span className="flex min-w-0 flex-col gap-0.5">
+							<span className="text-sm font-medium text-fg group-disabled:text-fg-disabled">{c.name}</span>
+							<span className="text-xs text-fg-muted group-disabled:text-fg-disabled">
+								{c.id === "rabby"
+									? "Ledger supported. Select your Ledger account in Rabby."
+									: c.id === "x1"
+										? "Derived from your X1 signature. Reconnects each session."
+										: "Ethereum provider with EIP-712 signing"}
+							</span>
+						</span>
+					</button>
+				))}
+			</div>
+			<p className="text-xs text-fg-muted text-pretty">
+				For Ledger: select your hardware account in Rabby, unlock your Ledger and open its Ethereum app. Review and
+				approve signing requests on the device.
+			</p>
+		</>
+	);
+
+	const x1Step = (
+		<>
+			<div className="flex flex-col gap-1 pr-10">
+				<h2 id={titleId} className="text-base font-medium text-fg">
+					Connect X1 Wallet
+				</h2>
+				<p className="text-xs text-fg-muted text-pretty">
+					X1 Wallet signs one message. That signature creates your Hyperliquid account key.
+				</p>
+			</div>
+			<ul className="flex flex-col gap-2 rounded-8 bg-control p-3 text-xs text-fg-secondary">
+				<li>Your account is derived from your X1 signature.</li>
+				<li>Withdrawals are signed by this derived key.</li>
+				<li>To recover this account, use the same wallet and signature.</li>
+			</ul>
+			<div className="flex flex-col gap-2">
+				<Button size="md" className="w-full" disabled={isPending || !x1} onClick={() => x1 && handleConnect(x1)}>
+					I understand, connect
+				</Button>
+				<Button
+					variant="ghost"
+					intent="neutral"
+					size="sm"
+					className="w-full text-fg-muted"
+					disabled={isPending}
+					onClick={() => {
+						setError(null);
+						setStep("choose");
+					}}
+				>
+					Back
+				</Button>
+			</div>
+		</>
+	);
+
+	const content = (
+		<ModalContent className="flex flex-col gap-4">
+			{step === "x1" ? x1Step : chooseStep}
+			{error && (
+				<p role="alert" className="text-xs text-market-down">
+					{error}
+				</p>
+			)}
+			{embedded && (
+				<Button variant="secondary" intent="neutral" size="sm" className="w-full" onClick={() => onOpenChange(false)}>
+					Back to withdrawal
+				</Button>
+			)}
+		</ModalContent>
+	);
+
+	if (embedded) return content;
+
+	return (
+		<Modal open={open} onOpenChange={handleOpenChange}>
+			<ModalPopup size="sm" aria-labelledby={titleId}>
+				{content}
+			</ModalPopup>
+		</Modal>
+	);
+}
+
+function getConnectError(error: unknown, connectorId: string) {
+	if (error instanceof Error && error.name === "ProviderNotFoundError") {
+		if (connectorId === "phantom")
+			return "Phantom not found. Install Phantom, or turn on Ethereum in Phantom settings, then reload.";
+		if (connectorId === "rabby") return "Rabby Wallet not found. Install Rabby, then reload.";
+		return "X1 Wallet not found. Install X1 Wallet, then reload.";
+	}
+	if (error instanceof Error && error.name === "UserRejectedRequestError") return "Request cancelled in your wallet.";
+	return error instanceof Error ? error.message : "Connection failed";
 }

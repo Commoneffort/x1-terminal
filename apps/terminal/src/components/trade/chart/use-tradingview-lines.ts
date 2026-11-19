@@ -1,35 +1,109 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
-import { useChartMarksStore } from "@/stores/use-chart-marks-store";
 import { useEffect, useMemo } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
-import { buildTradingLines } from "@/lib/chart/trading-lines";
+import { useTradingAccount } from "@/hooks/use-trading-account";
+import {
+	LABEL_FONT,
+	LABEL_HEIGHT,
+	LEFT_INSET,
+	labelWidth,
+	leftOffsets,
+	measureLabel,
+	positionLineStyle,
+} from "@/lib/chart/position-line-style";
+import { colorToHex, getChartColors } from "@/lib/chart/theme-colors";
+import { buildTradingLines, getTradingLineColor } from "@/lib/chart/trading-lines";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { getOrderLineLabel } from "@/lib/trade/open-orders";
-import type { EntityId, IChartingLibraryWidget } from "@/types/charting_library";
+import { useChartMarksStore } from "@/stores/use-chart-marks-store";
+import type { IChartingLibraryWidget } from "@/types/charting_library";
 
 export function useTradingViewLines(widget: IChartingLibraryWidget | null, symbol: string, dex?: string) {
- const hidden = useChartMarksStore(state => state.hidden);
- const { address, isConnected } = useTradingAccount();
- const { getPosition } = useUserPositions();
- const position = isConnected ? getPosition(symbol, dex) ?? getPosition(symbol.split(":").at(-1)!, dex) : undefined;
- const { data } = useSubscription("openOrders", { user: address ?? "0x0", dex: HL_ALL_DEXS }, { enabled: isConnected && !!address });
- const lines = useMemo(() => !isConnected ? [] : buildTradingLines(symbol, position ?? undefined, (data && data.user?.toLowerCase() === address?.toLowerCase() ? data.orders : []).map(order => ({ ...order, label: getOrderLineLabel(order) }))), [isConnected, address, symbol, position, data]);
- useEffect(() => {
-  if (!widget || hidden) return;
-  let active = true;
-  const ids: EntityId[] = [];
-  const chart = widget.activeChart();
-  const draw = () => {
-   if (!active) return;
-   for (const line of lines) {
-    const id = chart.createShape({ time: Math.floor(Date.now() / 1000), price: line.price }, {
-     shape: "horizontal_line", text: line.label, lock: true, disableSelection: true, disableSave: true, disableUndo: true, showInObjectsTree: false,
-     overrides: { linecolor: line.color, textcolor: line.color, linewidth: 1, linestyle: 2, showLabel: true, showPrice: true, fontsize: 11 },
-    });
-    if (id !== null) ids.push(id);
-   }
-  };
-  if (chart.dataReady()) draw(); else chart.dataReady(draw);
-  return () => { active = false; for (const id of ids) { try { chart.removeEntity(id, { disableUndo: true }); } catch { /* Widget may already be disposed. */ } } };
- }, [widget, lines, hidden]);
+	const hidden = useChartMarksStore((state) => state.hidden);
+	const { address, isConnected } = useTradingAccount();
+	const { getPosition } = useUserPositions();
+	const position = isConnected ? (getPosition(symbol, dex) ?? getPosition(symbol.split(":").at(-1)!, dex)) : undefined;
+	const { data } = useSubscription(
+		"openOrders",
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
+		{ enabled: isConnected && !!address },
+	);
+	const lines = useMemo(
+		() =>
+			!isConnected
+				? []
+				: buildTradingLines(
+						symbol,
+						position ?? undefined,
+						(data && data.user?.toLowerCase() === address?.toLowerCase() ? data.orders : []).map((order) => ({
+							...order,
+							label: getOrderLineLabel(order),
+						})),
+					),
+		[isConnected, address, symbol, position, data],
+	);
+	useEffect(() => {
+		if (!widget || hidden) return;
+		let active = true;
+		const chart = widget.activeChart();
+		const chartColors = getChartColors();
+		const page = colorToHex(chartColors.page);
+		const fg = colorToHex(chartColors.foreground);
+		const removers: (() => void)[] = [];
+		const draw = () => {
+			if (!active) return;
+			let minGap = 0;
+			try {
+				const pane = chart.getPanes()[0];
+				const range = pane?.getMainSourcePriceScale()?.getVisiblePriceRange();
+				const height = pane?.getHeight();
+				if (range && height) minGap = (Math.abs(range.to - range.from) * LABEL_HEIGHT) / height;
+			} catch {
+				minGap = 0;
+			}
+			const styles = lines.map((line) => positionLineStyle(line, { color: getTradingLineColor(line.tone), page, fg }));
+			const lefts = leftOffsets(
+				lines.map((line) => line.price),
+				styles.map((style) => labelWidth(style, measureLabel)),
+				minGap,
+			);
+			for (const [index, line] of lines.entries()) {
+				const style = styles[index];
+				try {
+					const adapter = chart
+						.createPositionLine({ disableUndo: true })
+						.setPrice(line.price)
+						.setText(style.body)
+						.setQuantity(style.qty)
+						.setLineColor(style.color)
+						.setLineStyle(2)
+						.setLineWidth(1)
+						.setLineLength(-lefts[index], "pixel")
+						.setExtendLeft(lefts[index] === LEFT_INSET)
+						.setBodyFont(LABEL_FONT)
+						.setQuantityFont(LABEL_FONT)
+						.setBodyBackgroundColor(style.fill)
+						.setBodyBorderColor(style.color)
+						.setBodyTextColor(style.text)
+						.setQuantityBackgroundColor(style.surface)
+						.setQuantityBorderColor(style.color)
+						.setQuantityTextColor(style.fg);
+					removers.push(() => adapter.remove());
+				} catch {
+					/* Chart may not be ready for trading primitives. */
+				}
+			}
+		};
+		if (chart.dataReady()) draw();
+		else chart.dataReady(draw);
+		return () => {
+			active = false;
+			for (const remove of removers) {
+				try {
+					remove();
+				} catch {
+					/* Widget may already be disposed. */
+				}
+			}
+		};
+	}, [widget, lines, hidden]);
 }

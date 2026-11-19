@@ -1,8 +1,8 @@
-import { getPositionDex } from "@/domain/market";
-import { useUserPositions } from "@/lib/hyperliquid";
 import { useConnection } from "wagmi";
+import { getPositionDex } from "@/domain/market";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
+import { useUserPositions } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
 import { useDefaultDexBalances } from "./use-account-balances";
@@ -32,7 +32,7 @@ interface OrderEntryData extends OrderEntryDerived {
 }
 
 interface UseOrderEntryDataOptions {
- reduceOnly?: boolean;
+	reduceOnly?: boolean;
 	market: UnifiedMarketInfo | undefined;
 	side: Side;
 	markPx: number;
@@ -41,7 +41,7 @@ interface UseOrderEntryDataOptions {
 }
 
 export function useOrderEntryData({
- reduceOnly = false,
+	reduceOnly = false,
 	market,
 	side,
 	markPx,
@@ -70,13 +70,13 @@ export function useOrderEntryData({
 	} = useAssetLeverage();
 
 	const userPositions = useUserPositions();
- const position = market ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const position = market ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
 
 	const derived = deriveOrderEntry({
-  reduceOnly,
-  positionSize: position?.szi,
+		reduceOnly,
+		positionSize: position?.szi,
 		isConnected,
 		market,
 		side,
@@ -92,7 +92,7 @@ export function useOrderEntryData({
 	function getSizeForPercent(pct: number): string {
 		return getSizeForPercentCalc({
 			pct,
-   reduceOnly: derived.isReducing,
+			reduceOnly: derived.isReducing,
 			isSpotMarket: derived.isSpotMarket,
 			side,
 			sizeMode,
@@ -105,7 +105,7 @@ export function useOrderEntryData({
 
 	function convertSizeForModeToggle(): string {
 		return getSizeValueForModeToggle({
-   reduceOnly: derived.isReducing,
+			reduceOnly: derived.isReducing,
 			sizeValue: derived.sizeValue,
 			sizeMode,
 			price: conversionPrice,

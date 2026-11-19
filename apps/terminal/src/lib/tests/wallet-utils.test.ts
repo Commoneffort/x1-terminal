@@ -31,27 +31,29 @@ function connector(input: Partial<Connector> & Pick<Connector, "id" | "name" | "
 
 describe("wallet utilities", () => {
 	it("sorts popular connectors by recent wallet first and configured priority second", () => {
-		const metaMask = connector({ id: "metaMask", name: "MetaMask", type: "injected" });
-		const walletConnect = connector({ id: "walletConnect", name: "WalletConnect", type: "walletConnect" });
-		const coinbase = connector({ id: "coinbaseWallet", name: "Coinbase Wallet", type: "coinbaseWallet" });
+		const rabby = connector({ id: "rabby", name: "Rabby", type: "injected" });
+		const phantom = connector({ id: "phantom", name: "Phantom", type: "injected" });
+		const x1 = connector({ id: "x1", name: "X1", type: "x1" });
 
-		expect(sortWalletConnectors([coinbase, metaMask, walletConnect], ["walletConnect"]).map((item) => item.id)).toEqual(
-			["walletConnect", "metaMask", "coinbaseWallet"],
-		);
+		expect(sortWalletConnectors([x1, phantom, rabby], ["x1"]).map((item) => item.id)).toEqual([
+			"x1",
+			"rabby",
+			"phantom",
+		]);
 	});
 
 	it("splits mock connectors away from regular popular and other wallets", () => {
 		const groups = getWalletConnectorGroups(
 			[
 				connector({ id: "mock", name: "Mock Wallet", type: "mock" }),
-				connector({ id: "walletConnect", name: "WalletConnect", type: "walletConnect" }),
+				connector({ id: "rabby", name: "Rabby", type: "injected" }),
 				connector({ id: "injected", name: "Injected", type: "injected" }),
 			],
 			[],
 		);
 
 		expect(groups.mockConnectors.map((item) => item.id)).toEqual(["mock"]);
-		expect(groups.popular.map((item) => item.id)).toEqual(["walletConnect"]);
+		expect(groups.popular.map((item) => item.id)).toEqual(["rabby"]);
 		expect(groups.other.map((item) => item.id)).toEqual(["injected"]);
 	});
 

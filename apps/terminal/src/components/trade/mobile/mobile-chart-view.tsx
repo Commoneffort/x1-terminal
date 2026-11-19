@@ -1,18 +1,19 @@
-import {ChartPanel} from "../chart/chart-panel";
+import { t } from "@lingui/core/macro";
 import { FireIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { UI_TEXT } from "@/config/ui-text";
 import { get24hChange, getOiUsd } from "@/domain/market";
+import { useTickFlash } from "@/hooks/ui/use-tick-flash";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD } from "@/lib/format";
+import { formatPercent, formatPrice, formatUSD } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
+import { ChartPanel } from "../chart/chart-panel";
 import { TokenSelector } from "../chart/token-selector";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
-
 
 const overviewText = UI_TEXT.MARKET_OVERVIEW;
 
@@ -33,66 +34,76 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 	const markPx = selectedMarket?.markPx;
 	const change24h = get24hChange(selectedMarket?.prevDayPx, selectedMarket?.markPx);
 	const oiUsd = getOiUsd(selectedMarket?.openInterest, selectedMarket?.markPx);
+	const priceRef = useTickFlash<HTMLDivElement>(markPx, selectedMarket?.name ?? "");
 
 	return (
 		<div className={cn("flex flex-col flex-1 min-h-0", className)}>
-			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface">
-				<div className="flex items-center justify-between gap-3">
-					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
+			<div className="shrink-0 h-12 px-3 flex items-center justify-between gap-3 border-b border-stroke-weak bg-surface">
+				<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
 
-					<Skeleton name="market-price" loading={isLoading}>
-						<div className="text-right">
-							<div
-								className={cn(
-									"text-sm font-semibold tabular-nums",
-									change24h !== null ? getValueColorClass(change24h) : "text-fg",
-								)}
-							>
-								{formatUSD(markPx ?? null)}
-							</div>
-							{typeof change24h === "number" && (
-								<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
-									{change24h >= 0 ? "+" : ""}
-									{change24h.toFixed(2)}%
-								</div>
+				<Skeleton name="market-price" loading={isLoading}>
+					<div className="text-right">
+						<div
+							ref={priceRef}
+							className={cn(
+								"text-base font-medium tabular-nums",
+								change24h !== null ? getValueColorClass(change24h) : "text-fg",
 							)}
+						>
+							{formatPrice(markPx ?? null, { szDecimals: selectedMarket?.szDecimals })}
+						</div>
+						{typeof change24h === "number" && (
+							<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
+								{change24h >= 0 ? "+" : ""}
+								{change24h.toFixed(2)}%
+							</div>
+						)}
+					</div>
+				</Skeleton>
+			</div>
+
+			<div className="shrink-0 border-b border-stroke-weak bg-surface">
+				<div
+					className={cn(
+						"overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+						"mask-r-from-[calc(100%-1.5rem)] mask-r-to-100%",
+					)}
+				>
+					<Skeleton name="market-stats" loading={isLoading}>
+						<div className="flex items-center gap-6 py-2 pl-3 pr-6 min-w-max">
+							<StatPill label={overviewText.LABEL_ORACLE} value={formatUSD(selectedMarket?.oraclePx)} />
+							<StatPill
+								label={overviewText.LABEL_VOLUME}
+								value={formatUSD(selectedMarket?.dayNtlVlm, {
+									notation: "compact",
+									compactDisplay: "short",
+								})}
+							/>
+							<StatPill
+								label={overviewText.LABEL_OPEN_INTEREST}
+								value={formatUSD(oiUsd, {
+									notation: "compact",
+									compactDisplay: "short",
+								})}
+							/>
+							<div className="flex flex-col gap-1">
+								<span className="flex items-center gap-1 text-2xs uppercase tracking-micro text-fg-muted">
+									<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
+									{t`Funding`}
+								</span>
+								<span className={cn("text-xs tabular-nums", getValueColorClass(fundingNum))}>
+									{formatPercent(fundingNum, {
+										minimumFractionDigits: 4,
+										signDisplay: "exceptZero",
+									})}
+								</span>
+							</div>
 						</div>
 					</Skeleton>
 				</div>
 			</div>
 
-			<div className="shrink-0 px-3 py-1.5 border-b border-stroke-weak/40 bg-background overflow-x-auto">
-				<Skeleton name="market-stats" loading={isLoading}>
-					<div className="flex items-center gap-4 text-xs min-w-max">
-						<StatPill label={overviewText.LABEL_ORACLE} value={formatUSD(selectedMarket?.oraclePx)} />
-						<StatPill
-							label={overviewText.LABEL_VOLUME}
-							value={formatUSD(selectedMarket?.dayNtlVlm, {
-								notation: "compact",
-								compactDisplay: "short",
-							})}
-						/>
-						<StatPill
-							label={overviewText.LABEL_OPEN_INTEREST}
-							value={formatUSD(oiUsd, {
-								notation: "compact",
-								compactDisplay: "short",
-							})}
-						/>
-						<div className="flex items-center gap-1">
-							<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
-							<span className={cn("tabular-nums font-medium", getValueColorClass(fundingNum))}>
-								{formatPercent(fundingNum, {
-									minimumFractionDigits: 4,
-									signDisplay: "exceptZero",
-								})}
-							</span>
-						</div>
-					</div>
-				</Skeleton>
-			</div>
-
-			<div className="flex-1 min-h-0">
+			<div className="flex-1 min-h-0 bg-surface">
 				<ChartPanel yAxisInside />
 			</div>
 
@@ -103,9 +114,9 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 
 function StatPill({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="flex items-center gap-1.5">
-			<span className="text-fg-muted text-xs">{label}</span>
-			<span className="tabular-nums text-fg text-xs">{value}</span>
+		<div className="flex flex-col gap-1">
+			<span className="text-2xs uppercase tracking-micro text-fg-muted">{label}</span>
+			<span className="text-xs tabular-nums text-fg">{value}</span>
 		</div>
 	);
 }

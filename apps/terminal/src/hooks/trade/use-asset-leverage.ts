@@ -1,6 +1,6 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import {
 	getMarketCapabilities,
 	useExchange,

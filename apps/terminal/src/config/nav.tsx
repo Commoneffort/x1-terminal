@@ -26,6 +26,7 @@ export interface ScopeNavItem {
 	label: ReactNode;
 	to: string;
 	activeClass: string;
+	accentClass: string;
 }
 
 export const SCOPE_NAV_ITEMS: readonly ScopeNavItem[] = [
@@ -33,25 +34,29 @@ export const SCOPE_NAV_ITEMS: readonly ScopeNavItem[] = [
 		scope: "all",
 		label: <Trans>All</Trans>,
 		to: "/",
-		activeClass: "text-fg font-medium bg-fill-hover",
+		activeClass: "text-fg",
+		accentClass: "bg-fg-muted",
 	},
 	{
 		scope: "perp",
 		label: <Trans>Perp</Trans>,
 		to: "/perp",
-		activeClass: "text-scope-perp font-medium bg-scope-perp/10",
+		activeClass: "text-fg",
+		accentClass: "bg-scope-perp",
 	},
 	{
 		scope: "spot",
 		label: <Trans>Spot</Trans>,
 		to: "/spot",
-		activeClass: "text-scope-spot font-medium bg-scope-spot/10",
+		activeClass: "text-fg",
+		accentClass: "bg-scope-spot",
 	},
 	{
 		scope: "builders-perp",
 		label: <Trans>Builders</Trans>,
 		to: "/builders-perp",
-		activeClass: "text-scope-builders font-medium bg-scope-builders/10",
+		activeClass: "text-fg",
+		accentClass: "bg-scope-builders",
 	},
 ] as const;
 
@@ -65,5 +70,4 @@ export const STATIC_NAV_ITEMS: readonly StaticNavItem[] = [
 	{ key: "portfolio", label: <Trans>Portfolio</Trans> },
 	{ key: "staking", label: <Trans>Staking</Trans> },
 	{ key: "leaderboard", label: <Trans>Leaderboard</Trans> },
- { key: "auto-trader", label: <Trans>Auto Trader</Trans> },
 ] as const;

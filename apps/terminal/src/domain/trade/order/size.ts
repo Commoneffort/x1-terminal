@@ -11,8 +11,8 @@ interface MaxSizeInput {
 }
 
 interface OrderEntryMaxSizeInput {
- reduceOnly?: boolean;
- positionSize?: string | number | null;
+	reduceOnly?: boolean;
+	positionSize?: string | number | null;
 	isConnected: boolean;
 	isSpotMarket: boolean;
 	side: Side;
@@ -41,7 +41,7 @@ interface SizeValuesInput {
 }
 
 interface SizeForPercentInput {
- reduceOnly?: boolean;
+	reduceOnly?: boolean;
 	pct: number;
 	isSpotMarket: boolean;
 	side: Side;
@@ -53,7 +53,7 @@ interface SizeForPercentInput {
 }
 
 interface SizeModeToggleInput {
- reduceOnly?: boolean;
+	reduceOnly?: boolean;
 	sizeValue: number;
 	sizeMode: SizeMode;
 	price: number;
@@ -65,10 +65,14 @@ function formatSizeValue(value: number, decimals: number): string {
 	return formatDecimalFloor(value, decimals);
 }
 
-export function getReducibleSize(positionSize: string | number | null | undefined, side: Side, decimals: number): number {
- const position = toBig(positionSize);
- if (!position || position.eq(0) || (side === "sell" ? position.lt(0) : position.gt(0))) return 0;
- return Number(position.abs().toFixed(decimals, Big.roundDown));
+export function getReducibleSize(
+	positionSize: string | number | null | undefined,
+	side: Side,
+	decimals: number,
+): number {
+	const position = toBig(positionSize);
+	if (!position || position.eq(0) || (side === "sell" ? position.lt(0) : position.gt(0))) return 0;
+	return Number(position.abs().toFixed(decimals, Big.roundDown));
 }
 
 export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
@@ -89,7 +93,7 @@ export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
 		return Number.isFinite(floored) ? floored : 0;
 	}
 
- if (input.reduceOnly) return getReducibleSize(input.positionSize, input.side, input.szDecimals);
+	if (input.reduceOnly) return getReducibleSize(input.positionSize, input.side, input.szDecimals);
 
 	const maxTradeSize = input.maxTradeSzs?.[isBuy ? 0 : 1] ?? 0;
 	return maxTradeSize > 0 ? maxTradeSize : 0;
@@ -172,7 +176,9 @@ export function getSizeValueForModeToggle(input: SizeModeToggleInput): string {
 	if (input.sizeValue <= 0 || input.price <= 0) return "";
 
 	if (input.sizeMode === "base") {
-		return input.reduceOnly ? Big(input.sizeValue).times(input.price).toString() : Big(input.sizeValue).times(input.price).toFixed(2);
+		return input.reduceOnly
+			? Big(input.sizeValue).times(input.price).toString()
+			: Big(input.sizeValue).times(input.price).toFixed(2);
 	}
 	return formatSizeValue(input.sizeValue, input.szDecimals);
 }

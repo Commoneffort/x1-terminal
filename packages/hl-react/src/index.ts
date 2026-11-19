@@ -31,6 +31,7 @@ export {
 	type UseInfoOptions,
 	useInfo,
 } from "./hooks/useInfo";
+export { useOrderbookSubscription } from "./hooks/useOrderbookSubscription";
 export { useSubscription } from "./hooks/useSubscription";
 export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
@@ -129,5 +130,3 @@ export {
 	type SpotToken,
 } from "./types/markets";
 export { type UseUserWalletResult, useUserWallet } from "./use-user-wallet";
-
-export { useOrderbookSubscription } from "./hooks/useOrderbookSubscription";

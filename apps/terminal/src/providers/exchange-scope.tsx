@@ -27,10 +27,13 @@ function deriveScope(pathname: string): ExchangeScopeContext {
 
 export function ExchangeScopeProvider({ children }: { children: React.ReactNode }) {
 	const { pathname, search } = useLocation();
- const previewScope = (search as { scope?: unknown }).scope;
- const selection: ExchangeScopeContext = pathname === "/newtheme" && (previewScope === "all" || previewScope === "perp" || previewScope === "spot" || previewScope === "builders-perp")
-  ? { scope: previewScope, dex: undefined } : deriveScope(pathname);
- const { scope, dex } = selection;
+	const previewScope = (search as { scope?: unknown }).scope;
+	const selection: ExchangeScopeContext =
+		pathname === "/newtheme" &&
+		(previewScope === "all" || previewScope === "perp" || previewScope === "spot" || previewScope === "builders-perp")
+			? { scope: previewScope, dex: undefined }
+			: deriveScope(pathname);
+	const { scope, dex } = selection;
 	const value = useMemo(() => ({ scope, dex }), [scope, dex]);
 
 	return <ExchangeScopeCtx value={value}>{children}</ExchangeScopeCtx>;

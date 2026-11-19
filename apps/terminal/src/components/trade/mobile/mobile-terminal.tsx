@@ -1,6 +1,6 @@
-import {useTradingAccount} from "@/hooks/use-trading-account";
-import { SentimentTape } from "../header/sentiment-tape";
 import { HL_ALL_DEXS } from "@/config/app";
+import { useAutoManaged } from "@/hooks/use-auto-managed";
+import { useTradingAccount } from "@/hooks/use-trading-account";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
@@ -23,6 +23,7 @@ export function MobileTerminal({ className }: Props) {
 	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const { address, isConnected } = useTradingAccount();
 	const { positions } = useUserPositions();
+	const auto = useAutoManaged();
 
 	const { data: ordersEvent } = useSubscription(
 		"openOrders",
@@ -39,7 +40,6 @@ export function MobileTerminal({ className }: Props) {
 	return (
 		<div className={cn("h-dvh w-full flex flex-col bg-background text-fg font-sans", "overflow-hidden", className)}>
 			<MobileHeader />
-            <SentimentTape />
 			<OfflineBanner />
 			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
 				{activeTab === "chart" && <MobileChartView />}
@@ -52,6 +52,7 @@ export function MobileTerminal({ className }: Props) {
 				activeTab={activeTab}
 				onTabChange={setMobileActiveTab}
 				badges={{ positions: positionsCount + ordersCount }}
+				dots={{ trade: auto.live }}
 			/>
 		</div>
 	);

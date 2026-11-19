@@ -5,7 +5,7 @@ import type { RegistrationStatus } from "@/lib/hyperliquid";
 import type { ButtonContent, FormValidationResult, Side } from "@/lib/trade/types";
 
 interface ButtonContentInput {
- reduceOnly?: boolean;
+	reduceOnly?: boolean;
 	isConnected: boolean;
 	needsChainSwitch: boolean;
 	isSwitchingChain: boolean;
@@ -88,7 +88,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.isSwitchingChain,
 		input.switchChain,
 		input.availableBalance,
-  input.reduceOnly,
+		input.reduceOnly,
 		input.validation.needsApproval,
 		input.validation.canSubmit,
 		registerText,

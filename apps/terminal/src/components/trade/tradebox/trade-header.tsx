@@ -1,11 +1,12 @@
-import { Dropdown } from "@hypeterminal/ui";
+import { Dropdown, Tabs, TabsList, TabsTrigger } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { PencilSimpleIcon } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import type { OrderType } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
+import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { getAdvancedOrderLabel, getTabsOrderType } from "@/lib/trade/order-types";
+import { getAdvancedOrderLabel, getShortAdvancedOrderLabel, getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 import { SideToggle } from "./side-toggle";
 
@@ -20,7 +21,13 @@ interface Props {
 	leverage?: number;
 	onMarginLeverageClick?: () => void;
 	isLeveraged?: boolean;
+	insetClassName?: string;
 }
+
+const moreTriggerClass =
+	"relative h-full shrink-0 gap-1 whitespace-nowrap rounded-none bg-transparent px-3 text-fg-muted @max-[330px]/order-type:px-2 @max-[260px]/order-type:px-1.5 hover:bg-transparent hover:text-fg data-[popup-open]:text-fg focus-visible:outline-offset-2";
+const moreActiveClass =
+	"font-medium text-fg after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-fg after:content-['']";
 
 export function TradeHeader({
 	orderType,
@@ -33,67 +40,103 @@ export function TradeHeader({
 	leverage,
 	onMarginLeverageClick,
 	isLeveraged,
+	insetClassName,
 }: Props) {
 	const tabsOrderType = getTabsOrderType(orderType);
-
-	const orderTypeLabel =
-		tabsOrderType === "advanced"
-			? getAdvancedOrderLabel(orderType, t`Other`)
-			: tabsOrderType === "market"
-				? t`Market`
-				: t`Limit`;
+	const isAdvanced = tabsOrderType === "advanced";
+	const moreLabel = getAdvancedOrderLabel(orderType, t`More`);
+	const shortMoreLabel = getShortAdvancedOrderLabel(orderType, t`More`);
 
 	const isSpot = marketKind === "spot";
-	const orderTypeItems = [
-		{ label: t`Market`, active: orderType === "market", onSelect: () => onOrderTypeChange("market") },
-		{ label: t`Limit`, active: orderType === "limit", onSelect: () => onOrderTypeChange("limit") },
+	const advancedItems = [
 		...(!isSpot
 			? [
 					{
 						label: t`Stop Market`,
 						active: orderType === "stopMarket",
-						onSelect: () => onOrderTypeChange("stopMarket" as OrderType),
+						onSelect: () => onOrderTypeChange("stopMarket"),
 					},
 					{
 						label: t`Stop Limit`,
 						active: orderType === "stopLimit",
-						onSelect: () => onOrderTypeChange("stopLimit" as OrderType),
+						onSelect: () => onOrderTypeChange("stopLimit"),
 					},
 				]
 			: []),
-		{ label: t`TWAP`, active: orderType === "twap", onSelect: () => onOrderTypeChange("twap" as OrderType) },
-		{ label: t`Scale`, active: orderType === "scale", onSelect: () => onOrderTypeChange("scale" as OrderType) },
+		{ label: t`TWAP`, active: orderType === "twap", onSelect: () => onOrderTypeChange("twap") },
+		{ label: t`Scale`, active: orderType === "scale", onSelect: () => onOrderTypeChange("scale") },
 	];
 
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
 
+	function handleTabChange(value: unknown) {
+		if (value === "market" || value === "limit") onOrderTypeChange(value);
+	}
+
 	return (
-		<div className="min-w-0 space-y-4">
-			<div className="flex items-center justify-between">
+		<div className="flex min-w-0 flex-col">
+			<div
+				className={cn(
+					"@container/order-type flex h-9 items-stretch border-b border-stroke-weak max-md:h-10",
+					insetClassName,
+				)}
+			>
+				<Tabs value={tabsOrderType} onValueChange={handleTabChange} variant="underline" className="h-full">
+					<TabsList className={cn("h-full border-b-0")} hideIndicator={isAdvanced}>
+						<TabsTrigger
+							value="market"
+							className="h-full py-0 @max-[330px]/order-type:px-2 @max-[260px]/order-type:px-1.5"
+						>
+							{t`Market`}
+						</TabsTrigger>
+						<TabsTrigger
+							value="limit"
+							className="h-full py-0 @max-[330px]/order-type:px-2 @max-[260px]/order-type:px-1.5"
+						>
+							{t`Limit`}
+						</TabsTrigger>
+					</TabsList>
+				</Tabs>
 				<Dropdown
-					trigger={<span className="flex items-center gap-0.5 font-semibold text-fg">{orderTypeLabel}</span>}
-					items={orderTypeItems}
-					size="sm"
+					trigger={
+						<>
+							<span className="inline-grid whitespace-nowrap @max-[260px]/order-type:hidden">
+								<span aria-hidden="true" className="invisible col-start-1 row-start-1 font-medium">
+									{moreLabel}
+								</span>
+								<span className="col-start-1 row-start-1">{moreLabel}</span>
+							</span>
+							<span className="hidden whitespace-nowrap @max-[260px]/order-type:inline-grid">
+								<span aria-hidden="true" className="invisible col-start-1 row-start-1 font-medium">
+									{shortMoreLabel}
+								</span>
+								<span className="col-start-1 row-start-1">{shortMoreLabel}</span>
+							</span>
+						</>
+					}
+					items={advancedItems}
 					align="start"
 					triggerVariant="minimal"
 					triggerAriaLabel={t`Order type`}
-					className="inline-flex"
+					triggerClassName={cn(moreTriggerClass, isAdvanced && moreActiveClass)}
 				/>
 				{isLeveraged && (
 					<button
 						type="button"
 						onClick={onMarginLeverageClick}
-						className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors cursor-pointer"
+						aria-label={t`Margin mode and leverage`}
+						className="my-auto ml-auto flex h-7 shrink-0 items-center gap-1.5 rounded-8 px-2 @max-[300px]/order-type:gap-1 @max-[300px]/order-type:px-1.5 text-xs text-fg-secondary tabular-nums transition-colors hover:bg-control hover:text-fg"
 					>
-						<span>
-							{marginLabel} · {leverage ?? 1}x
-						</span>
-						<PencilSimpleIcon className="size-3" />
+						<span className="@max-[260px]/order-type:hidden">{marginLabel}</span>
+						<span className="text-fg">{leverage ?? 1}x</span>
+						<CaretDownIcon weight="bold" className="size-3 text-fg-muted @max-[300px]/order-type:hidden" />
 					</button>
 				)}
 			</div>
 
-			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} />
+			<div className={cn("flex min-w-0 flex-col gap-2 pt-3", insetClassName)}>
+				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} />
+			</div>
 		</div>
 	);
 }

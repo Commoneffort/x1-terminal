@@ -1,8 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
+@import "@fontsource/geist-mono/700.css";
 @import "@hypeterminal/ui/globals.css";
 @source "../../../packages/ui/src";
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ============================================
    HyperTerminal UI — Design Tokens
@@ -20,19 +29,19 @@
   /* ---- Font Families ---- */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, "SF Mono", monospace;
+  --font-wordmark: "Geist", var(--font-sans);
+  --text-wordmark: 14.5px;
 
-  /* ---- Typography Scale (Desktop) ----
-     Figma name      → Tailwind class
-     Tiny     14/20  → text-xs
-     Small    16/24  → text-sm
-     Heading4 20/28  → text-base
-     Heading3 24/32  → text-lg
-     Heading2 32/40  → text-xl
-     Heading1 40/48  → text-2xl
-     Display  56/64  → text-3xl
+  /* ---- Typography Scale (docs/design-system.md §2) ----
+     11/16 → text-2xs  (uppercase micro-labels only, with tracking-micro)
+     12/16 → text-xs   (default UI text and data)
+     14/20 → text-sm   (nav links, primary CTAs)
+     16/24 → text-base (symbol, price, modal titles, mobile inputs)
+     20/28 → text-lg   (empty-state titles only)
+     text-3xs is a deprecated alias of text-2xs: 10px is removed.
   */
-  --text-3xs: 10px;
-  --text-3xs--line-height: 14px;
+  --text-3xs: 11px;
+  --text-3xs--line-height: 16px;
   --text-2xs: 11px;
   --text-2xs--line-height: 16px;
   --text-xs: 12px;
@@ -58,6 +67,8 @@
   --color-grey-solid-900: #12131a;
   --color-grey-solid-1000: #000000;
 
+  /* ---- X1 Brand Gradient (the "1" in the logo) ---- */
+
   /* ---- Spacing Base (4px grid) ---- */
   --spacing: 4px;
 
@@ -69,6 +80,7 @@
   /* ---- Letter Spacing ---- */
   --tracking-uppercase: 2px;
   --tracking-heading-1: -0.5px;
+  --tracking-micro: 0.04em;
 
   /* ---- HyperTerminal Custom Animations ---- */
   --animate-pulse-slow: pulse-slow 2s ease-in-out infinite;
@@ -90,6 +102,33 @@
     from { width: 100%; }
     to { width: 0%; }
   }
+
+  /* ---- Rolling number digits (components/ui/rolling-number.tsx) ---- */
+  --animate-roll-in-up: roll-in-up 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-roll-out-up: roll-out-up 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-roll-in-down: roll-in-down 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-roll-out-down: roll-out-down 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes roll-in-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes roll-out-up {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-100%); opacity: 0; }
+  }
+
+  @keyframes roll-in-down {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes roll-out-down {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(100%); opacity: 0; }
+  }
+
 }
 
 /* =============================================
@@ -102,19 +141,21 @@
     color-scheme: light;
 
     /* Background */
-    --bg-base: #ffffff;
+    --bg-base: #eef0f4;
     --bg-raised: #ffffff;
     --bg-overlay: #ffffff;
     --bg-sunken: #f5f6fa;
     --bg-alternate: #f5f6fa;
-    --bg-brand: #4c64d9;
+    --bg-band: #0009330a;
+    --bg-brand: #16171d;
     --bg-inverse: #12131a;
 
     /* Text */
     --text-strong: #000626e5;
-    --text-weak: #000933a6;
-    --text-brand: #4c64d9;
-    --text-disabled: #0011661a;
+    --text-secondary: #000933b8;
+    --text-weak: #0009338f;
+    --text-brand: #16171d;
+    --text-disabled: #00093352;
     --text-error: #c73a3a;
     --text-warning: #8f6c1a;
     --text-success: #067a57;
@@ -127,13 +168,15 @@
     --fill-strong: #000626e5;
     --fill-weak: #0015800a;
     --fill-weaker: #00158005;
+    --fill-control: #eceef3;
+    --fill-control-hover: #e1e4eb;
     --fill-hover: #0015800a;
     --fill-press: #0011661a;
-    --fill-selected: #4c64d9;
+    --fill-selected: #16171d;
     --fill-disabled: #0011661a;
     --fill-overlay: #000d4daa;
-    --fill-brand-strong: #4c64d9;
-    --fill-brand-weak: #4c64d90d;
+    --fill-brand-strong: #16171d;
+    --fill-brand-weak: #16171d0d;
     --fill-error-strong: #c73a3a;
     --fill-error-weak: #ff4a4a0d;
     --fill-warning-strong: #8f6c1a;
@@ -153,11 +196,13 @@
     /* Stroke */
     --stroke-strong: #000d4d73;
     --stroke-weak: #0011661a;
-    --stroke-selected: #4c64d9;
-    --stroke-focus: #4c64d9;
+    --stroke-faint: #0011660f;
+    --stroke-control-focus: #0011663d;
+    --stroke-selected: #16171d;
+    --stroke-focus: #16171d;
     --stroke-disabled: #0011661a;
-    --stroke-brand-strong: #4c64d9cc;
-    --stroke-brand-weak: #4c64d933;
+    --stroke-brand-strong: #16171dcc;
+    --stroke-brand-weak: #16171d33;
     --stroke-error-strong: #c73a3acc;
     --stroke-error-weak: #c73a3a24;
     --stroke-warning-strong: #8f6c1acc;
@@ -172,7 +217,7 @@
 
     /* Icon */
     --icon-neutral: #000d4d99;
-    --icon-brand: #4c64d9cc;
+    --icon-brand: #16171dcc;
     --icon-disabled: #0011661a;
     --icon-error: #c73a3acc;
     --icon-warning: #8f6c1acc;
@@ -185,11 +230,16 @@
     /* HyperTerminal Trading Extensions */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
+    --market-up-flash: color-mix(in oklab, var(--market-up) 55%, var(--text-strong));
+    --market-down-flash: color-mix(in oklab, var(--market-down) 55%, var(--text-strong));
     --market-neutral: #8A919A;
     --scope-perp: #2563EB;
     --scope-spot: #0F766E;
     --scope-builders: #B45309;
     --sel: rgba(37, 99, 235, 0.15);
+
+    /* Elevation (menus, popovers, tooltips, modals) */
+    --elevation-menu: 0 4px 8px rgba(0, 0, 0, 0.06), 0 16px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
   /* ==================== DARK MODE ==================== */
@@ -197,23 +247,25 @@
     color-scheme: dark;
 
     /* Background */
-    --bg-base: #12131a;
-    --bg-raised: #1d1e26;
-    --bg-overlay: #292b33;
+    --bg-base: #07070a;
+    --bg-raised: #121217;
+    --bg-overlay: #1b1b22;
     --bg-sunken: #000000;
-    --bg-alternate: #1d1e26;
-    --bg-brand: #b2bcf1;
+    --bg-alternate: #121217;
+    --bg-band: #ffffff0a;
+    --bg-brand: #ececf1;
     --bg-inverse: #ffffff;
 
     /* Text */
-    --text-strong: #ffffff;
-    --text-weak: #ffffffc7;
-    --text-brand: #b2bcf1;
-    --text-disabled: #ffffff1f;
-    --text-error: #ff9c9c;
-    --text-warning: #e0be70;
-    --text-success: #77c7af;
-    --text-info: #7ec0e5;
+    --text-strong: #fffffff2;
+    --text-secondary: #ffffffb8;
+    --text-weak: #ffffff8f;
+    --text-brand: #ececf1;
+    --text-disabled: #ffffff52;
+    --text-error: #ff5c6c;
+    --text-warning: #ffc23d;
+    --text-success: #2ee6a6;
+    --text-info: #4cb8ff;
     --text-inverse-strong: #000626e5;
     --text-inverse-weak: #000933a6;
     --text-inverse-disabled: #0011661a;
@@ -222,22 +274,24 @@
     --fill-strong: #ffffff;
     --fill-weak: #ffffff0f;
     --fill-weaker: #ffffff08;
+    --fill-control: #22222a;
+    --fill-control-hover: #2c2c36;
     --fill-hover: #ffffff0f;
     --fill-press: #ffffff1f;
-    --fill-selected: #b2bcf1;
+    --fill-selected: #ececf1;
     --fill-disabled: #ffffff1f;
-    --fill-overlay: #000626a8;
-    --fill-brand-strong: #b2bcf1;
-    --fill-brand-weak: #b2bcf10f;
-    --fill-error-strong: #ff9c9c;
-    --fill-error-weak: #ff9c9c14;
-    --fill-warning-strong: #e0be70;
-    --fill-warning-weak: #e0be7014;
-    --fill-success-strong: #77c7af;
-    --fill-success-weak: #77c7af14;
-    --fill-info-strong: #7ec0e5;
-    --fill-info-weak: #7ec0e514;
-    --fill-inverse-strong: #12131a;
+    --fill-overlay: #00000099;
+    --fill-brand-strong: #ececf1;
+    --fill-brand-weak: #ececf10f;
+    --fill-error-strong: #ff5c6c;
+    --fill-error-weak: #ff5c6c14;
+    --fill-warning-strong: #ffc23d;
+    --fill-warning-weak: #ffc23d14;
+    --fill-success-strong: #2ee6a6;
+    --fill-success-weak: #2ee6a614;
+    --fill-info-strong: #4cb8ff;
+    --fill-info-weak: #4cb8ff14;
+    --fill-inverse-strong: #07070a;
     --fill-inverse-weak: #0015800a;
     --fill-inverse-hover: #0015800a;
     --fill-inverse-press: #0011661a;
@@ -247,32 +301,34 @@
 
     /* Stroke */
     --stroke-strong: #ffffff99;
-    --stroke-weak: #ffffff1f;
-    --stroke-selected: #b2bcf1;
-    --stroke-focus: #b2bcf1;
+    --stroke-weak: #ffffff14;
+    --stroke-faint: #ffffff0d;
+    --stroke-control-focus: #ffffff3d;
+    --stroke-selected: #ececf1;
+    --stroke-focus: #ececf1;
     --stroke-disabled: #ffffff1f;
-    --stroke-brand-strong: #b2bcf1cc;
-    --stroke-brand-weak: #b2bcf133;
-    --stroke-error-strong: #ff9c9ccc;
-    --stroke-error-weak: #ff9c9c33;
-    --stroke-warning-strong: #e0be70cc;
-    --stroke-warning-weak: #e0be7033;
-    --stroke-success-strong: #77c7afcc;
-    --stroke-success-weak: #77c7af33;
-    --stroke-info-strong: #7ec0e5cc;
-    --stroke-info-weak: #7ec0e533;
+    --stroke-brand-strong: #ececf1cc;
+    --stroke-brand-weak: #ececf133;
+    --stroke-error-strong: #ff5c6ccc;
+    --stroke-error-weak: #ff5c6c33;
+    --stroke-warning-strong: #ffc23dcc;
+    --stroke-warning-weak: #ffc23d33;
+    --stroke-success-strong: #2ee6a6cc;
+    --stroke-success-weak: #2ee6a633;
+    --stroke-info-strong: #4cb8ffcc;
+    --stroke-info-weak: #4cb8ff33;
     --stroke-inverse-strong: #000d4d73;
     --stroke-inverse-weak: #0011661a;
     --stroke-inverse-disabled: #0011661a;
 
     /* Icon */
     --icon-neutral: #ffffff99;
-    --icon-brand: #b2bcf1cc;
+    --icon-brand: #ececf1cc;
     --icon-disabled: #ffffff1f;
-    --icon-error: #ff9c9ccc;
-    --icon-warning: #e0be70cc;
-    --icon-success: #77c7afcc;
-    --icon-info: #7ec0e5cc;
+    --icon-error: #ff5c6ccc;
+    --icon-warning: #ffc23dcc;
+    --icon-success: #2ee6a6cc;
+    --icon-info: #4cb8ffcc;
     --icon-inverse: #000d4d73;
     --icon-inverse-strong: #000626e5;
     --icon-inverse-disabled: #0011661a;
@@ -280,11 +336,16 @@
     /* HyperTerminal Trading Extensions (Dark) */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
+    --market-up-flash: color-mix(in oklab, var(--market-up) 55%, var(--text-strong));
+    --market-down-flash: color-mix(in oklab, var(--market-down) 55%, var(--text-strong));
     --market-neutral: #6B7280;
     --scope-perp: #4F7DFF;
     --scope-spot: #2DD4BF;
     --scope-builders: #F59E0B;
     --sel: rgba(79, 125, 255, 0.15);
+
+    /* Elevation (menus, popovers, tooltips, modals) */
+    --elevation-menu: 0 4px 8px rgba(0, 0, 0, 0.45), 0 16px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -300,10 +361,12 @@
   --color-overlay: var(--bg-overlay);
   --color-sunken: var(--bg-sunken);
   --color-alternate: var(--bg-alternate);
+  --color-band: var(--bg-band);
   --color-inverse-surface: var(--bg-inverse);
 
   /* Foregrounds */
   --color-fg: var(--text-strong);
+  --color-fg-secondary: var(--text-secondary);
   --color-fg-muted: var(--text-weak);
   --color-fg-disabled: var(--text-disabled);
   --color-fg-inverse: var(--text-inverse-strong);
@@ -326,6 +389,8 @@
   --color-fill: var(--fill-strong);
   --color-fill-weak: var(--fill-weak);
   --color-fill-weaker: var(--fill-weaker);
+  --color-control: var(--fill-control);
+  --color-control-hover: var(--fill-control-hover);
   --color-fill-hover: var(--fill-hover);
   --color-fill-press: var(--fill-press);
   --color-fill-selected: var(--fill-selected);
@@ -341,6 +406,8 @@
 
   /* Strokes (kept as `stroke-` — border ≠ stroke, so no stutter) */
   --color-stroke-weak: var(--stroke-weak);
+  --color-stroke-faint: var(--stroke-faint);
+  --color-stroke-control-focus: var(--stroke-control-focus);
   --color-stroke-strong: var(--stroke-strong);
   --color-stroke-selected: var(--stroke-selected);
   --color-stroke-focus: var(--stroke-focus);
@@ -374,11 +441,16 @@
   /* HyperTerminal Trading Extensions */
   --color-market-up: var(--market-up);
   --color-market-down: var(--market-down);
+  --color-market-up-flash: var(--market-up-flash);
+  --color-market-down-flash: var(--market-down-flash);
   --color-market-neutral: var(--market-neutral);
   --color-scope-perp: var(--scope-perp);
   --color-scope-spot: var(--scope-spot);
   --color-scope-builders: var(--scope-builders);
   --color-sel: var(--sel);
+
+  /* Elevation */
+  --shadow-menu: var(--elevation-menu);
 }
 
 /* =============================================
@@ -510,22 +582,14 @@
   }
 
   .depth-bar-ask {
-    background: linear-gradient(90deg, transparent 0%, oklch(from var(--text-error) l c h / 0.18) 100%);
+    background: color-mix(in oklab, var(--market-down) 16%, var(--bg-raised));
   }
   .depth-bar-bid {
-    background: linear-gradient(90deg, oklch(from var(--text-success) l c h / 0.18) 0%, transparent 100%);
-  }
-  .dark .depth-bar-ask {
-    background: linear-gradient(90deg, transparent 0%, oklch(from var(--text-error) l c h / 0.25) 100%);
-  }
-  .dark .depth-bar-bid {
-    background: linear-gradient(90deg, oklch(from var(--text-success) l c h / 0.25) 0%, transparent 100%);
+    background: color-mix(in oklab, var(--market-up) 16%, var(--bg-raised));
   }
 
   .trade-row-buy,
   .trade-row-sell {
-    margin-inline: -0.5rem;
-    padding-inline: 0.5rem;
     background-color: transparent;
     transition: background-color 0.4s ease-out;
   }
@@ -557,17 +621,38 @@
   display: none !important;
 }
 
-/* Continuous sentiment tape. Each identical group occupies half the track. */
-.sentiment-tape-viewport { scrollbar-width: none; }
-.sentiment-tape-viewport::-webkit-scrollbar { display: none; }
-.sentiment-tape-track { display: flex; width: max-content; animation: sentiment-tape-scroll var(--tape-duration, 78s) linear infinite; }
-.sentiment-tape-group { display: flex; flex: none; width: max-content; margin: 0; padding: 0; list-style: none; white-space: nowrap; }
-.sentiment-tape:hover .sentiment-tape-track,
-.sentiment-tape:focus-within .sentiment-tape-track,
-.sentiment-tape[data-paused="true"] .sentiment-tape-track { animation-play-state: paused; }
-@keyframes sentiment-tape-scroll { to { transform: translateX(-50%); } }
+/* Focus rings show only after keyboard navigation, never after a click followed by Shift or another modifier. */
+html[data-input="pointer"] :focus-visible:not(input, textarea, [contenteditable="true"]) {
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+}
+
+.chart-cursor-pointer,
+.chart-cursor-pointer * {
+	cursor: pointer !important;
+}
+
+.chart-cursor-row-resize,
+.chart-cursor-row-resize * {
+	cursor: row-resize !important;
+}
+
+/* Mood Ring */
+:root {
+  --mood-bear-rim: oklch(0.36 0.14 355);
+  --mood-bear-mid: oklch(0.62 0.2 22);
+  --mood-bear-core: oklch(0.9 0.06 35);
+  --mood-bull-rim: oklch(0.36 0.08 205);
+  --mood-bull-mid: oklch(0.72 0.15 165);
+  --mood-bull-core: oklch(0.95 0.06 170);
+}
+.mood-view-next { animation: mood-view-next 320ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.mood-view-prev { animation: mood-view-prev 320ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.mood-fade-in { animation: mood-fade-in 220ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes mood-view-next { from { opacity: 0; transform: translateX(28px); } }
+@keyframes mood-view-prev { from { opacity: 0; transform: translateX(-28px); } }
+@keyframes mood-opacity-in { from { opacity: 0; } }
+@keyframes mood-fade-in { from { opacity: 0; transform: scale(0.97); filter: blur(2px); } }
 @media (prefers-reduced-motion: reduce) {
- .sentiment-tape-track { animation: none; }
- .sentiment-tape-group[aria-hidden="true"] { display: none; }
- .sentiment-tape-viewport { scrollbar-width: thin; }
+  .mood-view-next, .mood-view-prev, .mood-fade-in { animation: mood-opacity-in 160ms ease-out both; }
 }

@@ -1,10 +1,12 @@
-import { buildExecutionMarkers, type ExecutionFill } from "@/lib/chart/execution-markers";
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
-import { RESOLUTIONS, resolutionToInterval } from "@/lib/chart/resolution";
+import { buildExecutionMarkers, type ExecutionFill } from "@/lib/chart/execution-markers";
+import { type CandleInterval, RESOLUTIONS, resolutionToInterval } from "@/lib/chart/resolution";
+import { withRetry } from "@/lib/chart/retry";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import { coinFromSymbolName, inferPriceScaleFromMids, symbolFromCoin } from "@/lib/chart/symbol";
+import { colorToHex, getChartColors } from "@/lib/chart/theme-colors";
 import { getDexFromName, getInfoClient, getMarketKindFromName } from "@/lib/hyperliquid";
 import type {
 	Bar,
@@ -115,9 +117,40 @@ function isSameBar(a: Bar | undefined, b: Bar | undefined): boolean {
 
 // TradingView fixes native mark text at >=10px. A centered SVG label lets
 // compact 12px badges use a 25% smaller letter without changing vendor code.
-const executionLabelImages = Object.fromEntries((["B", "S"] as const).map(label => [label,
- `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><text x="6" y="6" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="7.5" font-weight="700" fill="white">${label}</text></svg>`)}`,
-]));
+const executionLabelImages = new Map<string, string>();
+
+function executionLabelImage(label: "B" | "S", fill: string): string {
+	const key = `${label}:${fill}`;
+	const cached = executionLabelImages.get(key);
+	if (cached) return cached;
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><text x="6" y="6" text-anchor="middle" dominant-baseline="central" font-family="Arial, sans-serif" font-size="7.5" font-weight="700" fill="${fill}">${label}</text></svg>`;
+	const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+	executionLabelImages.set(key, url);
+	return url;
+}
+
+const CANDLE_UNIT_MS: Record<string, number> = {
+	m: 60_000,
+	h: 3_600_000,
+	d: 86_400_000,
+	w: 7 * 86_400_000,
+	M: 30 * 86_400_000,
+};
+
+const GAP_BAR_FACTOR = 1.5;
+
+function candleIntervalMs(interval: CandleInterval): number {
+	return Number.parseInt(interval, 10) * (CANDLE_UNIT_MS[interval.slice(-1)] ?? 0);
+}
+
+function crossesBarBoundary(fromMs: number, toMs: number, barMs: number): boolean {
+	return barMs > 0 && Math.floor(fromMs / barMs) !== Math.floor(toMs / barMs);
+}
+
+interface ResyncListener {
+	barMs: number;
+	onResetCacheNeeded: () => void;
+}
 
 const configuration: DatafeedConfiguration = {
 	exchanges: [{ value: EXCHANGE, name: EXCHANGE, desc: EXCHANGE }],
@@ -127,21 +160,104 @@ const configuration: DatafeedConfiguration = {
 	supports_timescale_marks: false,
 };
 
-export function createDatafeed(getFills: () => readonly ExecutionFill[] = () => []): IBasicDataFeed {
+/**
+ * The shared candle store pauses market streams while the tab is hidden and
+ * keeps only the latest bar per stream, and a websocket reconnect resumes with
+ * the current bar only. Both leave a hole in the series, so the feed asks the
+ * chart to refetch history (`onBarsReset` must call `chart.resetData()`) when
+ * the page returns after a bar boundary or a live bar skips past the last one.
+ */
+export function createDatafeed(
+	getFills: () => readonly ExecutionFill[] = () => [],
+	onBarsReset?: () => void,
+): IBasicDataFeed {
 	const store = getCandleStore();
 	const listenerToStream = new Map<string, string>();
+	const resyncListeners = new Map<string, ResyncListener>();
+	const pendingResets = new Set<string>();
+	const resetBarTimes = new Map<string, number>();
+	let resetScheduled = false;
+	let hiddenAt: number | null = null;
+	let detachVisibility: (() => void) | undefined;
+
+	function scheduleReset(listenerGuid: string) {
+		pendingResets.add(listenerGuid);
+		if (resetScheduled) return;
+		resetScheduled = true;
+		setTimeout(() => {
+			resetScheduled = false;
+			let didReset = false;
+			for (const guid of pendingResets) {
+				const listener = resyncListeners.get(guid);
+				if (!listener) continue;
+				listener.onResetCacheNeeded();
+				didReset = true;
+			}
+			pendingResets.clear();
+			if (didReset) onBarsReset?.();
+		}, 0);
+	}
+
+	function handleVisibilityChange() {
+		if (document.visibilityState === "hidden") {
+			hiddenAt ??= Date.now();
+			return;
+		}
+		if (hiddenAt === null) return;
+		const now = Date.now();
+		for (const [guid, listener] of resyncListeners) {
+			if (crossesBarBoundary(hiddenAt, now, listener.barMs)) scheduleReset(guid);
+		}
+		hiddenAt = null;
+	}
+
+	function attachVisibility() {
+		if (detachVisibility || typeof document === "undefined") return;
+		hiddenAt = document.visibilityState === "hidden" ? Date.now() : null;
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		detachVisibility = () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+	}
+
+	function releaseResyncListener(listenerGuid: string) {
+		resyncListeners.delete(listenerGuid);
+		pendingResets.delete(listenerGuid);
+		if (resyncListeners.size > 0) return;
+		detachVisibility?.();
+		detachVisibility = undefined;
+	}
 
 	return {
-  getMarks: (info, from, to, callback, resolution) => {
-   const interval = RESOLUTIONS[resolution];
-   if (!interval) { callback([]); return; }
-   const markers = buildExecutionMarkers(getFills(), coinFromSymbolName(info.ticker ?? info.name), interval.barMs);
-   callback(markers.filter(m => m.time / 1000 >= from && m.time / 1000 <= to).map(m => ({
-    id: m.id, time: m.time / 1000, color: { background: m.color, border: m.color }, label: m.label,
-    text: `${m.label === "B" ? "Buy" : "Sell"} ${m.size} @ ${m.price}`, labelFontColor: "#ffffff", minSize: 12, borderWidth: 0,
-    imageUrl: executionLabelImages[m.label], showLabelWhenImageLoaded: false,
-   })));
-  },
+		getMarks: (info, from, to, callback, resolution) => {
+			const interval = RESOLUTIONS[resolution];
+			if (!interval) {
+				callback([]);
+				return;
+			}
+			const markers = buildExecutionMarkers(getFills(), coinFromSymbolName(info.ticker ?? info.name), interval.barMs);
+			const colors = getChartColors();
+			const buyColor = colorToHex(colors.green);
+			const sellColor = colorToHex(colors.red);
+			const labelColor = colorToHex(colors.page);
+			callback(
+				markers
+					.filter((m) => m.time / 1000 >= from && m.time / 1000 <= to)
+					.map((m) => {
+						const color = m.label === "B" ? buyColor : sellColor;
+						return {
+							id: m.id,
+							time: m.time / 1000,
+							color: { background: color, border: color },
+							label: m.label,
+							text: `${m.label === "B" ? "Buy" : "Sell"} ${m.size} @ ${m.price}`,
+							labelFontColor: labelColor,
+							minSize: 12,
+							borderWidth: 0,
+							imageUrl: executionLabelImage(m.label, labelColor),
+							showLabelWhenImageLoaded: false,
+						};
+					}),
+			);
+		},
 		onReady: (callback: OnReadyCallback) => {
 			setTimeout(() => callback(configuration), 0);
 		},
@@ -155,12 +271,12 @@ export function createDatafeed(getFills: () => readonly ExecutionFill[] = () => 
 				const coin = coinFromSymbolName(symbolName);
 				const displayName = symbolFromCoin(coin);
 
-				if (!(await isKnownCoin(coin))) {
+				if (!(await withRetry(() => isKnownCoin(coin)))) {
 					onError(t`Unknown symbol: ${symbolName}`);
 					return;
 				}
 
-				const pricescale = await inferPriceScale(coin);
+				const pricescale = await withRetry(() => inferPriceScale(coin));
 
 				const symbolInfo: LibrarySymbolInfo = {
 					name: displayName,
@@ -209,12 +325,14 @@ export function createDatafeed(getFills: () => readonly ExecutionFill[] = () => 
 					return;
 				}
 
-				const candles = await getInfoClient().candleSnapshot({
-					coin,
-					interval,
-					startTime: fromMs,
-					endTime: toMs,
-				});
+				const candles = await withRetry(() =>
+					getInfoClient().candleSnapshot({
+						coin,
+						interval,
+						startTime: fromMs,
+						endTime: toMs,
+					}),
+				);
 
 				const bars = filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
 
@@ -254,9 +372,22 @@ export function createDatafeed(getFills: () => readonly ExecutionFill[] = () => 
 
 			listenerToStream.set(listenerGuid, key);
 
+			const resyncListener: ResyncListener = {
+				barMs: candleIntervalMs(interval),
+				onResetCacheNeeded: onResetCacheNeededCallback,
+			};
+			resyncListeners.set(listenerGuid, resyncListener);
+			attachVisibility();
+
 			const wrappedOnTick = (bar: Bar) => {
+				const previous = store.getState().getLastBar(symbolCacheKey);
 				store.getState().setLastBar(symbolCacheKey, bar);
 				onTick(bar);
+				const skippedBars = previous !== undefined && bar.time - previous.time > resyncListener.barMs * GAP_BAR_FACTOR;
+				if (skippedBars && resetBarTimes.get(symbolCacheKey) !== bar.time) {
+					resetBarTimes.set(symbolCacheKey, bar.time);
+					scheduleReset(listenerGuid);
+				}
 			};
 
 			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, onResetCacheNeededCallback);
@@ -274,6 +405,7 @@ export function createDatafeed(getFills: () => readonly ExecutionFill[] = () => 
 				store.getState().unsubscribe(key, listenerGuid);
 				listenerToStream.delete(listenerGuid);
 			}
+			releaseResyncListener(listenerGuid);
 		},
 
 		getServerTime: (callback: ServerTimeCallback) => {

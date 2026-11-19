@@ -1,30 +1,201 @@
-import {HelpTip} from "./help-tip";
-import {AutoTraderMarketLabel} from "./market-label";
 import { Trans } from "@lingui/react/macro";
-import { allowedMarkets, selectableMarkets, EXECUTOR_MARKETS } from "@/lib/auto-trader/targets";
+import { useId } from "react";
+import { allowedMarkets, EXECUTOR_MARKETS, selectableMarkets } from "@/lib/auto-trader/targets";
 import type { AutoTraderSettings } from "@/lib/auto-trader/types";
-export const autoField="w-full rounded-lg border border-stroke-weak bg-background px-3 py-2 text-sm text-fg outline-none focus:border-brand";
-export const autoButton="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-fg-inverse disabled:opacity-40";
-export function SettingsCard({value,onChange,disabled,markets,closeRemovedSupported=false}:{value:AutoTraderSettings;onChange:(value:AutoTraderSettings)=>void;disabled:boolean;markets:readonly string[];closeRemovedSupported?:boolean}){
- const flowPct=value.flowPct??40;
- const selected=allowedMarkets(value,markets);
- const displayMarkets=selectableMarkets(markets,value);
- return <fieldset disabled={disabled} className="space-y-4"><legend className="mb-3 text-sm font-semibold"><Trans>Auto Trader settings</Trans></legend>
-  <div className="grid gap-4 sm:grid-cols-3"><div className="text-xs text-fg-muted"><Trans>Leverage</Trans><HelpTip label="Leverage" /><span className="ml-2 text-brand">{value.leverage}x</span><input aria-label="Auto Trader leverage" type="range" min={1} max={5} step={1} value={value.leverage} onChange={e=>onChange({...value,leverage:Number(e.target.value)})} className="mt-3 w-full accent-brand" /></div>
-   <div className="text-xs text-fg-muted"><Trans>Daily loss stop (%)</Trans><HelpTip label="Daily loss stop (%)" /><input aria-label="Daily loss stop percent" type="number" min={0.1} max={50} step={0.1} value={Number((value.killPct*100).toFixed(4))} onChange={e=>onChange({...value,killPct:Number(e.target.value)/100})} className={`mt-2 ${autoField}`} /></div>
-   <div className="text-xs text-fg-muted"><Trans>Minimum order (USD)</Trans><HelpTip label="Minimum order (USD)" /><input aria-label="Minimum Auto Trader order USD" type="number" min={10} step={1} value={value.minOrderUsd} onChange={e=>onChange({...value,minOrderUsd:Number(e.target.value)})} className={`mt-2 ${autoField}`} /></div>
-  </div>
-  <div className="rounded-lg border border-stroke-weak bg-background/40 p-3 space-y-2">
-   <div className="flex items-center justify-between gap-3"><label htmlFor="auto-trader-flow-weight" className="text-xs font-medium">Signal blend<HelpTip label="Signal blend" /></label><button type="button" disabled={disabled||flowPct===40} onClick={()=>onChange({...value,flowPct:40})} className="text-[10px] text-fg-muted hover:text-brand disabled:opacity-40">Reset to 60 / 40</button></div>
-   <div className="flex items-center justify-between text-xs tabular-nums"><span className="text-brand">Positions <strong>{100-flowPct}%</strong></span><span className="text-success">6h flow <strong>{flowPct}%</strong></span></div>
-   <input id="auto-trader-flow-weight" aria-label="Auto Trader flow weight" aria-valuetext={`${100-flowPct}% positions, ${flowPct}% six-hour flow`} type="range" min={0} max={40} step={1} value={flowPct} onChange={e=>onChange({...value,flowPct:Number(e.target.value)})} className="w-full accent-success cursor-pointer disabled:cursor-default" />
-   <div className="flex justify-between text-[10px] text-fg-muted"><span>0% · Positions only</span><span>40% · Default flow weight</span></div>
-   <p className="text-[10px] text-fg-muted">Changes this bot’s score blend. Save settings to apply on the next eligible cycle. The forecast uses the saved blend.</p>
-  </div>
-  <div className="rounded-lg border border-stroke-weak bg-background/40 p-3 space-y-2"><div className="flex items-center justify-between gap-4"><div className="min-w-0"><span className="text-xs font-medium">Close removed positions</span><HelpTip label="Close removed positions"/><p className="mt-1 text-[10px] text-fg-muted">Close perpetual positions in markets you remove after enabling this setting. Save to schedule closes for the next eligible cycle.</p></div><button type="button" role="switch" aria-label="Close removed positions" aria-checked={value.closeRemovedPositions===true} disabled={disabled||!closeRemovedSupported} onClick={()=>onChange({...value,closeRemovedPositions:!value.closeRemovedPositions})} className={`inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-40 ${value.closeRemovedPositions?"bg-success":"bg-fill-weak"}`}><span aria-hidden="true" className={`size-4 rounded-full bg-fg transition-transform ${value.closeRemovedPositions?"translate-x-4":"translate-x-0"}`}/></button></div>
-   {!closeRemovedSupported&&<p role="status" className="text-[10px] text-warning">Requires updated API and executor support. Removed positions currently remain open.</p>}
-   {!!value.closeMarkets?.length&&value.closeRemovedPositions&&<p className="text-[10px] text-fg-muted">Saved close intents: {value.closeMarkets.join(", ")}. Reselect a market or turn this off and save to cancel its intent.</p>}
-  </div>
-  <div><p className="mb-2 text-xs text-fg-muted"><Trans>Markets</Trans><HelpTip label="Markets" /></p><div className="flex flex-wrap gap-3">{displayMarkets.map(coin=><label key={coin} className="inline-flex items-center gap-2 rounded-lg border border-stroke-weak px-3 py-2 text-xs"><input type="checkbox" title={!markets.includes(coin)?"Selection is retained. Trading requires a usable signal and executor support.":(EXECUTOR_MARKETS as readonly string[]).includes(coin)?undefined:"You can select this market. Trading still requires support in the executor."} checked={selected.includes(coin)} onChange={e=>onChange({...value,include:e.target.checked?[...selected,coin]:selected.filter(c=>c!==coin),exclude:[]})} className="accent-brand" /><AutoTraderMarketLabel coin={coin} />{!markets.includes(coin)?<span className="text-fg-muted">Awaiting signal API</span>:!(EXECUTOR_MARKETS as readonly string[]).includes(coin)&&<span className="text-fg-muted">Executor support pending</span>}</label>)}</div></div>
- </fieldset>;
+import { HelpTip } from "./help-tip";
+import { AutoTraderMarketLabel } from "./market-label";
+export const autoField =
+	"w-full rounded-lg border border-stroke-weak bg-background px-3 py-2 text-sm text-fg outline-none focus:border-brand";
+export const autoButton = "rounded-lg bg-brand px-4 py-2 text-sm font-medium text-fg-inverse disabled:opacity-40";
+export function SettingsCard({
+	value,
+	onChange,
+	disabled,
+	markets,
+	closeRemovedSupported = false,
+}: {
+	value: AutoTraderSettings;
+	onChange: (value: AutoTraderSettings) => void;
+	disabled: boolean;
+	markets: readonly string[];
+	closeRemovedSupported?: boolean;
+}) {
+	const flowWeightId = useId();
+	const flowPct = value.flowPct ?? 40;
+	const selected = allowedMarkets(value, markets);
+	const displayMarkets = selectableMarkets(markets, value);
+	return (
+		<fieldset disabled={disabled} className="space-y-4">
+			<legend className="mb-3 text-sm font-semibold">
+				<Trans>Auto Trader settings</Trans>
+			</legend>
+			<div className="grid gap-4 sm:grid-cols-3">
+				<div className="text-xs text-fg-muted">
+					<Trans>Leverage</Trans>
+					<HelpTip label="Leverage" />
+					<span className="ml-2 text-brand">{value.leverage}x</span>
+					<input
+						aria-label="Auto Trader leverage"
+						type="range"
+						min={1}
+						max={5}
+						step={1}
+						value={value.leverage}
+						onChange={(e) => onChange({ ...value, leverage: Number(e.target.value) })}
+						className="mt-3 w-full accent-brand"
+					/>
+				</div>
+				<div className="text-xs text-fg-muted">
+					<Trans>Daily loss stop (%)</Trans>
+					<HelpTip label="Daily loss stop (%)" />
+					<input
+						aria-label="Daily loss stop percent"
+						type="number"
+						min={0.1}
+						max={50}
+						step={0.1}
+						value={Number((value.killPct * 100).toFixed(4))}
+						onChange={(e) => onChange({ ...value, killPct: Number(e.target.value) / 100 })}
+						className={`mt-2 ${autoField}`}
+					/>
+				</div>
+				<div className="text-xs text-fg-muted">
+					<Trans>Minimum order (USD)</Trans>
+					<HelpTip label="Minimum order (USD)" />
+					<input
+						aria-label="Minimum Auto Trader order USD"
+						type="number"
+						min={10}
+						step={1}
+						value={value.minOrderUsd}
+						onChange={(e) => onChange({ ...value, minOrderUsd: Number(e.target.value) })}
+						className={`mt-2 ${autoField}`}
+					/>
+				</div>
+			</div>
+			<div className="rounded-lg border border-stroke-weak bg-background/40 p-3 space-y-2">
+				<div className="flex items-center justify-between gap-3">
+					<label htmlFor={flowWeightId} className="text-xs font-medium">
+						Signal blend
+						<HelpTip label="Signal blend" />
+					</label>
+					<button
+						type="button"
+						disabled={disabled || flowPct === 40}
+						onClick={() => onChange({ ...value, flowPct: 40 })}
+						className="text-[10px] text-fg-muted hover:text-brand disabled:opacity-40"
+					>
+						Reset to 60 / 40
+					</button>
+				</div>
+				<div className="flex items-center justify-between text-xs tabular-nums">
+					<span className="text-brand">
+						Positions <strong>{100 - flowPct}%</strong>
+					</span>
+					<span className="text-success">
+						6h flow <strong>{flowPct}%</strong>
+					</span>
+				</div>
+				<input
+					id={flowWeightId}
+					aria-label="Auto Trader flow weight"
+					aria-valuetext={`${100 - flowPct}% positions, ${flowPct}% six-hour flow`}
+					type="range"
+					min={0}
+					max={40}
+					step={1}
+					value={flowPct}
+					onChange={(e) => onChange({ ...value, flowPct: Number(e.target.value) })}
+					className="w-full accent-success cursor-pointer disabled:cursor-default"
+				/>
+				<div className="flex justify-between text-[10px] text-fg-muted">
+					<span>0%, Positions only</span>
+					<span>40%, Default flow weight</span>
+				</div>
+				<p className="text-[10px] text-fg-muted">
+					Changes this bot’s score blend. Save settings to apply on the next eligible cycle. The forecast uses the saved
+					blend.
+				</p>
+			</div>
+			<div className="rounded-lg border border-stroke-weak bg-background/40 p-3 space-y-2">
+				<div className="flex items-center justify-between gap-4">
+					<div className="min-w-0">
+						<span className="text-xs font-medium">Close removed positions</span>
+						<HelpTip label="Close removed positions" />
+						<p className="mt-1 text-[10px] text-fg-muted">
+							Close perpetual positions in markets you remove after enabling this setting. Save to schedule closes for
+							the next eligible cycle.
+						</p>
+					</div>
+					<button
+						type="button"
+						role="switch"
+						aria-label="Close removed positions"
+						aria-checked={value.closeRemovedPositions === true}
+						disabled={disabled || !closeRemovedSupported}
+						onClick={() => onChange({ ...value, closeRemovedPositions: !value.closeRemovedPositions })}
+						className={`inline-flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:opacity-40 ${value.closeRemovedPositions ? "bg-success" : "bg-fill-weak"}`}
+					>
+						<span
+							aria-hidden="true"
+							className={`size-4 rounded-full bg-fg transition-transform ${value.closeRemovedPositions ? "translate-x-4" : "translate-x-0"}`}
+						/>
+					</button>
+				</div>
+				{!closeRemovedSupported && (
+					<output className="block text-[10px] text-warning">
+						Requires updated API and executor support. Removed positions currently remain open.
+					</output>
+				)}
+				{!!value.closeMarkets?.length && value.closeRemovedPositions && (
+					<p className="text-[10px] text-fg-muted">
+						Saved close intents: {value.closeMarkets.join(", ")}. Reselect a market or turn this off and save to cancel
+						its intent.
+					</p>
+				)}
+			</div>
+			<div>
+				<p className="mb-2 text-xs text-fg-muted">
+					<Trans>Markets</Trans>
+					<HelpTip label="Markets" />
+				</p>
+				<div className="flex flex-wrap gap-3">
+					{displayMarkets.map((coin) => (
+						<label
+							key={coin}
+							className="inline-flex items-center gap-2 rounded-lg border border-stroke-weak px-3 py-2 text-xs"
+						>
+							<input
+								type="checkbox"
+								title={
+									!markets.includes(coin)
+										? "Selection is retained. Trading requires a usable signal and executor support."
+										: (EXECUTOR_MARKETS as readonly string[]).includes(coin)
+											? undefined
+											: "You can select this market. Trading still requires support in the executor."
+								}
+								checked={selected.includes(coin)}
+								onChange={(e) =>
+									onChange({
+										...value,
+										include: e.target.checked ? [...selected, coin] : selected.filter((c) => c !== coin),
+										exclude: [],
+									})
+								}
+								className="accent-brand"
+							/>
+							<AutoTraderMarketLabel coin={coin} />
+							{!markets.includes(coin) ? (
+								<span className="text-fg-muted">Awaiting signal API</span>
+							) : (
+								!(EXECUTOR_MARKETS as readonly string[]).includes(coin) && (
+									<span className="text-fg-muted">Executor support pending</span>
+								)
+							)}
+						</label>
+					))}
+				</div>
+			</div>
+		</fieldset>
+	);
 }

@@ -1,16 +1,20 @@
 import { Badge } from "@hypeterminal/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";
 
-export const MARKET_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex items-center gap-1 max-w-full min-w-0 px-1.5 py-1.5 rounded-8 border border-stroke-weak/50 bg-surface/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none";
+const LEVERAGE_BADGE = /^\d+x$/;
 
-function getMarketKindBadgeLabel(market: UnifiedMarketInfo | undefined): string {
-	if (!market) return "";
-	if (market.kind === "spot") return "Spot";
-	if (market.kind === "builderPerp") return market.dex;
-	return "Perp";
+export const MARKET_SELECTOR_TRIGGER_CLASSNAME =
+	"inline-flex h-8 max-w-full min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-8 px-2 transition-colors hover:bg-control aria-expanded:bg-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
+
+function getMarketBadges(market: UnifiedMarketInfo | undefined): string[] {
+	if (!market) return [];
+	if (market.kind === "spot") return ["Spot"];
+	const leverage = market.maxLeverage ? `${market.maxLeverage}x` : null;
+	if (market.kind === "builderPerp") return [market.dex, leverage].filter((badge): badge is string => !!badge);
+	return leverage ? [leverage] : ["Perp"];
 }
 
 interface Props {
@@ -18,28 +22,29 @@ interface Props {
 }
 
 export function TokenSelectorTriggerContent({ selectedMarket }: Props) {
-	const kindBadge = getMarketKindBadgeLabel(selectedMarket);
+	const badges = getMarketBadges(selectedMarket);
 
 	return (
 		<>
 			{selectedMarket && (
 				<>
-					<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-3.5" />
-					<span className="min-w-0 truncate text-xs font-medium text-fg tracking-tight leading-none">
+					<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
+					<span className="min-w-0 truncate text-base font-medium text-fg">
 						{selectedMarket.pairName ?? selectedMarket.name}
 					</span>
-					{kindBadge ? (
+					{badges.map((badge) => (
 						<Badge
+							key={badge}
 							tone="neutral"
 							size="xxs"
-							className="uppercase shrink-0 self-center font-normal leading-none text-fg-muted border-stroke-weak/40 bg-fill-weaker"
+							className={cn("text-fg-muted", !LEVERAGE_BADGE.test(badge) && "uppercase tracking-micro")}
 						>
-							{kindBadge}
+							{badge}
 						</Badge>
-					) : null}
+					))}
 				</>
 			)}
-			<CaretDownIcon className="size-3.5 shrink-0 self-center text-fg-muted" />
+			<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
 		</>
 	);
 }

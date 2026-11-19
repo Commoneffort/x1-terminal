@@ -46,7 +46,7 @@ export function useTradingGuard(): UseTradingGuardResult {
 	function enableTrading() {
 		if (isEnabling) return;
 		setLocalError(null);
-        if (typeof window !== "undefined") window.dispatchEvent(new Event("x1:setup"));
+		if (typeof window !== "undefined") window.dispatchEvent(new Event("x1:setup"));
 	}
 
 	function guardAction(action: PendingAction) {
