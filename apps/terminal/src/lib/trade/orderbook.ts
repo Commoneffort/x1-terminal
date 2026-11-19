@@ -3,6 +3,7 @@ import { szDecimalsToPriceDecimals } from "@/lib/format";
 export type RawBookLevel = { px: string; sz: string; n: number };
 
 export type BookLevel = {
+	quoteTotal?: number;
 	price: number;
 	size: number;
 	total: number;
@@ -128,4 +129,12 @@ export const ORDERBOOK_DEPTH_OPTIONS: { value: OrderbookDepth; label: string }[]
 
 export function getDefaultBookPriceDecimals(markPx: number | undefined, szDecimals: number): number {
 	return getPriceGroupingOptions(markPx)[0]?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
+}
+
+export function withQuoteTotals(levels: BookLevel[]): BookLevel[] {
+	let total = 0;
+	return levels.map((level) => {
+		total += level.price * level.size;
+		return { ...level, quoteTotal: total };
+	});
 }

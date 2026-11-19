@@ -16,6 +16,7 @@ export function subscribeOrderbook(
 	let lastTime = -Infinity;
 	return transport.subscribe<L2BookWsEvent>("l2Book", payload, (event) => {
 		const book = event.detail;
+		if (((book as L2BookWsEvent & { fast?: boolean }).fast === true) !== payload.fast) return;
 		if (book.coin !== payload.coin || !Number.isFinite(book.time) || book.time <= lastTime) return;
 		lastTime = book.time;
 		listener(book);

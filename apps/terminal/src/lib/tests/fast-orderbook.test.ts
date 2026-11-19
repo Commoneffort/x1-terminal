@@ -24,11 +24,14 @@ it("sends the fast option over the shared transport and keeps depth mode separat
 	);
 	expect(orderbookPayload({ coin: "BTC", fast: false }).fast).toBe(false);
 	const push = (coin: string, time: number) =>
-		receive({ detail: { coin, time, levels: [[], []] } } as unknown as CustomEvent<L2BookWsEvent>);
+		receive({ detail: { coin, time, fast: true, levels: [[], []] } } as unknown as CustomEvent<L2BookWsEvent>);
 	push("ETH", 200);
 	push("BTC", 100);
 	push("BTC", 99);
 	push("BTC", 100);
+	receive({
+		detail: { coin: "BTC", time: 1000, levels: [[], []], fast: false },
+	} as unknown as CustomEvent<L2BookWsEvent>);
 	push("BTC", 101);
 	expect(listener.mock.calls.map(([book]) => book.time)).toEqual([100, 101]);
 });

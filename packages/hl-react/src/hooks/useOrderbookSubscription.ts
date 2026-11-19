@@ -1,5 +1,6 @@
-import type { L2BookWsEvent, L2BookWsParameters } from "@nktkas/hyperliquid";
-import { orderbookPayload, subscribeOrderbook } from "../internal/websocket/orderbook";
+import type { IRequestTransport, ISubscriptionTransport, L2BookWsEvent, L2BookWsParameters } from "@nktkas/hyperliquid";
+import { subscribeLiveOrderbook } from "../internal/websocket/live-orderbook";
+import { orderbookPayload } from "../internal/websocket/orderbook";
 import { serializeKey, subscriptionKeys } from "../query/keys";
 import { useSubscriptionTransport } from "./useTransport";
 import { useSub } from "./utils/useSub";
@@ -12,8 +13,9 @@ export function useOrderbookSubscription(params: OrderbookSubscriptionParams, en
 	const transport = useSubscriptionTransport();
 	const payload = orderbookPayload(params);
 	const key = serializeKey(subscriptionKeys.method("l2Book", payload));
-	return useSub<L2BookWsEvent>(key, (listener) => subscribeOrderbook(transport, payload, listener), {
-		enabled,
-		throttleMs: 0,
-	});
+	return useSub<L2BookWsEvent>(
+		key,
+		(listener) => subscribeLiveOrderbook(transport as ISubscriptionTransport & IRequestTransport, payload, listener),
+		{ enabled, throttleMs: 0 },
+	);
 }

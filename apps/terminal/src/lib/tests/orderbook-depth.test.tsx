@@ -71,9 +71,9 @@ it("renders 5, 10, 15, and 20 rows per side rather than silently capping to the 
 		await act(async () => {
 			item.click();
 		});
-		expect(node.querySelectorAll('[data-book-side="ask"]')).toHaveLength(depth);
-		expect(node.querySelectorAll('[data-book-side="bid"]')).toHaveLength(depth);
-		expect(state.fast).toBe(depth === 5);
+		expect(node.querySelectorAll('[data-book-side="ask"], [data-book-placeholder="ask"]')).toHaveLength(depth);
+		expect(node.querySelectorAll('[data-book-side="bid"], [data-book-placeholder="bid"]')).toHaveLength(depth);
+		expect(state.fast).toBe(true);
 	}
 	await act(async () => root.unmount());
 	node.remove();

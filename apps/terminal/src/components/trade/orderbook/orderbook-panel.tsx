@@ -14,21 +14,23 @@ import {
 	ORDERBOOK_DEPTH_OPTIONS,
 	type OrderbookDepth,
 	processLevels,
+	withQuoteTotals,
 } from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
 
+const BOOK_SLOTS = Array.from({ length: 20 }, (_, slot) => `empty-${slot}`);
+
 const HEADER_ROW_CLASS =
 	"grid h-6 shrink-0 grid-cols-3 items-center gap-2 px-3 text-2xs uppercase tracking-micro text-fg-muted";
 const HEADER_TOGGLE_CLASS =
 	"min-w-0 cursor-pointer truncate text-right uppercase tracking-micro transition-colors duration-150 hover:text-fg focus-visible:text-fg focus-visible:outline-none motion-reduce:transition-none";
-const STATE_CLASS = "flex flex-1 items-center justify-center px-3 py-6 text-xs text-fg-muted";
 
 export function OrderbookPanel() {
 	useRenderCommitTrack("orderbook");
 	const [depth, setDepth] = useState<OrderbookDepth>(15);
-	const fast = depth === 5;
+	const fast = true;
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
@@ -49,28 +51,25 @@ export function OrderbookPanel() {
 			nSigFigs: selectedOption?.nSigFigs ?? 5,
 			mantissa: selectedOption?.mantissa,
 		}),
-		[selectedMarket?.name, selectedOption?.mantissa, selectedOption?.nSigFigs, fast],
+		[selectedMarket?.name, selectedOption?.mantissa, selectedOption?.nSigFigs],
 	);
 
-	const { data: orderbook, status: orderbookStatus } = useOrderbookSubscription(
-		subscriptionParams,
-		!!selectedMarket?.name,
-	);
+	const { data: orderbook } = useOrderbookSubscription(subscriptionParams, !!selectedMarket?.name && tab === "book");
 
 	const { baseToken, quoteToken } = useMemo(() => {
 		if (!selectedMarket) return { baseToken: "", quoteToken: "" };
 		return getBaseQuoteFromPairName(selectedMarket.pairName, selectedMarket.kind);
 	}, [selectedMarket]);
 
-	const bids = useMemo(() => processLevels(orderbook?.levels[0], depth), [orderbook?.levels, depth]);
-	const asks = useMemo(() => processLevels(orderbook?.levels[1], depth), [orderbook?.levels, depth]);
+	const bids = useMemo(() => withQuoteTotals(processLevels(orderbook?.levels[0], depth)), [orderbook?.levels, depth]);
+	const asks = useMemo(() => withQuoteTotals(processLevels(orderbook?.levels[1], depth)), [orderbook?.levels, depth]);
 	const asksReversed = useMemo(() => {
-		const reversed = new Array(asks.length);
-		for (let i = 0; i < asks.length; i += 1) {
-			reversed[i] = asks[asks.length - 1 - i];
+		const reversed = new Array(depth);
+		for (let i = 0; i < depth; i += 1) {
+			reversed[i] = asks[depth - 1 - i];
 		}
 		return reversed;
-	}, [asks]);
+	}, [asks, depth]);
 	const maxTotal = useMemo(() => getMaxTotal(bids, asks), [asks, bids]);
 	const spread = orderbook?.spread;
 	const spreadPct = getPercent(spread, selectedMarket?.markPx);
@@ -80,8 +79,6 @@ export function OrderbookPanel() {
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
-
-	const hasData = orderbookStatus !== "error";
 
 	const groupingItems = priceGroupingOptions.map((option) => ({
 		label: option.label,
@@ -115,7 +112,7 @@ export function OrderbookPanel() {
 						triggerClassName="-ml-1 text-fg"
 						popupClassName="min-w-28"
 					/>
-					<Tooltip content={t`5 levels uses the fast feed. 10, 15 and 20 use the depth feed.`} side="bottom">
+					<Tooltip content={t`Live fast top of book with refreshed depth at every size.`} side="bottom">
 						<span className="inline-flex">
 							<Dropdown
 								triggerVariant="minimal"
@@ -141,10 +138,13 @@ export function OrderbookPanel() {
 				</div>
 
 				<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-					<section className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto" aria-label={t`Ask levels`}>
+					<section
+						className="flex min-h-0 flex-1 flex-col-reverse overflow-y-auto [overflow-anchor:none]"
+						aria-label={t`Ask levels`}
+					>
 						<div className="flex shrink-0 flex-col">
-							{hasData && asks.length > 0 ? (
-								asksReversed.map((level) => (
+							{asksReversed.map((level, index) =>
+								level ? (
 									<OrderbookRow
 										key={`ask-${level.price}`}
 										level={level}
@@ -154,11 +154,14 @@ export function OrderbookPanel() {
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
 									/>
-								))
-							) : (
-								<div className={STATE_CLASS}>
-									{orderbookStatus === "error" ? t`Failed to load order book.` : t`Waiting for order book...`}
-								</div>
+								) : (
+									<div
+										key={`ask-${BOOK_SLOTS[index]}`}
+										data-book-placeholder="ask"
+										className="h-5 shrink-0"
+										aria-hidden="true"
+									/>
+								),
 							)}
 						</div>
 					</section>
@@ -173,9 +176,13 @@ export function OrderbookPanel() {
 						</span>
 					</div>
 
-					<section className="flex min-h-0 flex-1 flex-col overflow-y-auto" aria-label={t`Bid levels`}>
-						{hasData &&
-							bids.map((level) => (
+					<section
+						className="flex min-h-0 flex-1 flex-col overflow-y-auto [overflow-anchor:none]"
+						aria-label={t`Bid levels`}
+					>
+						{Array.from({ length: depth }, (_, index) => {
+							const level = bids[index];
+							return level ? (
 								<OrderbookRow
 									key={`bid-${level.price}`}
 									level={level}
@@ -185,7 +192,15 @@ export function OrderbookPanel() {
 									showInQuote={showOrderbookInQuote}
 									szDecimals={szDecimals}
 								/>
-							))}
+							) : (
+								<div
+									key={`bid-${BOOK_SLOTS[index]}`}
+									data-book-placeholder="bid"
+									className="h-5 shrink-0"
+									aria-hidden="true"
+								/>
+							);
+						})}
 					</section>
 				</div>
 			</TabsContent>

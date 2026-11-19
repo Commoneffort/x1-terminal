@@ -6,7 +6,7 @@ import { isLevelResized, playFlash } from "@/lib/ui/flash";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 
 const LEVEL_FLASH_KEYFRAMES: Keyframe[] = [{ opacity: 0.2 }, { opacity: 0.2, offset: 0.35 }, { opacity: 0 }];
-const LEVEL_FLASH_OPTIONS: KeyframeAnimationOptions = { duration: 700, easing: "ease-out" };
+const LEVEL_FLASH_OPTIONS: KeyframeAnimationOptions = { duration: 150, easing: "ease-out" };
 
 interface Props {
 	level: BookLevel;
@@ -33,16 +33,24 @@ function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuo
 	}, [level.price, level.size]);
 
 	const sizeValue = showInQuote ? level.size * level.price : level.size;
-	const totalValue = showInQuote ? level.total * level.price : level.total;
+	const totalValue = showInQuote ? (level.quoteTotal ?? level.total * level.price) : level.total;
 
 	const displayDecimals = showInQuote ? 2 : szDecimals;
 	const sizeText = formatNumber(sizeValue, { decimals: displayDecimals, compact: true });
 	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
 
 	return (
-		<div className="group relative h-5 shrink-0 cursor-pointer transition-colors duration-150 hover:bg-control/50 motion-reduce:transition-none">
+		<div
+			data-book-side={side}
+			data-book-price={level.price}
+			data-book-total={totalValue}
+			className="group relative h-5 shrink-0 cursor-pointer transition-colors duration-150 hover:bg-control/50 motion-reduce:transition-none"
+		>
 			<div
-				className={cn("pointer-events-none absolute inset-y-0 left-0", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
+				className={cn(
+					"pointer-events-none absolute inset-y-0 left-0 transition-[width] duration-[75ms] ease-out motion-reduce:transition-none",
+					isAsk ? "depth-bar-ask" : "depth-bar-bid",
+				)}
 				style={{ width: `${depthPct}%` }}
 			/>
 			<div
@@ -76,7 +84,8 @@ function areEqual(prev: Props, next: Props): boolean {
 		prev.szDecimals === next.szDecimals &&
 		prev.level.price === next.level.price &&
 		prev.level.size === next.level.size &&
-		prev.level.total === next.level.total
+		prev.level.total === next.level.total &&
+		prev.level.quoteTotal === next.level.quoteTotal
 	);
 }
 
