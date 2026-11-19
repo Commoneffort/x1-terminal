@@ -39,18 +39,23 @@ vi.mock("@hypeterminal/ui", () => ({
 		items,
 	}: {
 		trigger: ReactNode;
-		items: { label: string; disabled?: boolean; onSelect?: () => void }[];
+		items: { label: string; detail?: ReactNode; disabled?: boolean; onSelect?: () => void }[];
 	}) => (
 		<div>
 			<span data-trigger>{trigger}</span>
 			{items.map((item) => (
-				<button type="button" key={item.label} disabled={item.disabled} onClick={item.onSelect}>
-					{item.label}
-				</button>
+				<span key={item.label}>
+					<button type="button" disabled={item.disabled} onClick={item.onSelect}>
+						{item.label}
+					</button>
+					{item.detail}
+				</span>
 			))}
 		</div>
 	),
 }));
+const copied = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({ useCopyToClipboard: () => ({ copy: copied, copied: false }) }));
 afterEach(() => {
 	useTradingAccountStore.getState().select(null);
 	state.mutating = 0;
@@ -87,5 +92,15 @@ it("disables account switching while an operation is pending", async () => {
 	);
 	expect(buttons).toHaveLength(2);
 	expect(buttons.every((b) => b.disabled)).toBe(true);
+	await act(async () => root.unmount());
+});
+it("copies a subaccount address without switching accounts", async () => {
+	const host = document.createElement("div");
+	const root = createRoot(host);
+	await act(async () => root.render(<UserMenu />));
+	await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Copy Ledger bot address"]')!.click());
+	expect(copied).toHaveBeenCalledWith(state.sub);
+	expect(useTradingAccountStore.getState().selection).toBeNull();
+	expect(state.reset).not.toHaveBeenCalled();
 	await act(async () => root.unmount());
 });

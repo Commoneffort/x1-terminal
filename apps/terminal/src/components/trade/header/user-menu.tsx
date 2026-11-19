@@ -8,7 +8,7 @@ import {
 	SlidersHorizontalIcon,
 } from "@phosphor-icons/react";
 import { useIsMutating } from "@tanstack/react-query";
-import { useState } from "react";
+import { type SyntheticEvent, useState } from "react";
 import { zeroAddress } from "viem";
 import { useConnection, useDisconnect } from "wagmi";
 import { CopyStateIcon } from "@/components/ui/copy-state-icon";
@@ -95,12 +95,14 @@ export function UserMenu() {
 		? [
 				{
 					label: `Main account (${shortAddress(owner)})`,
+					detail: <CopyAddressButton address={owner} name="main account" />,
 					active: !active.isSubaccount,
 					disabled: mutating,
 					onSelect: () => choose(null),
 				},
 				...rows.map((row) => ({
 					label: `${row.name} (${shortAddress(row.subAccountUser)})`,
+					detail: <CopyAddressButton address={row.subAccountUser} name={row.name} />,
 					active: activeAddress.toLowerCase() === row.subAccountUser.toLowerCase(),
 					disabled: subaccounts.isError || mutating,
 					onSelect: () => choose(row),
@@ -210,6 +212,40 @@ export function UserMenu() {
 			<XntRewardsDrawer open={rewardsOpen} onOpenChange={setRewardsOpen} />
 			{derived && exportOpen && <ExportKeyModal key={owner} address={owner} onClose={() => setExportOpen(false)} />}
 		</>
+	);
+}
+
+interface CopyAddressButtonProps {
+	address: string;
+	name: string;
+}
+
+function CopyAddressButton({ address, name }: CopyAddressButtonProps) {
+	const { copied, copy } = useCopyToClipboard();
+
+	function stop(event: SyntheticEvent) {
+		event.stopPropagation();
+	}
+
+	function handleClick(event: SyntheticEvent) {
+		event.stopPropagation();
+		void copy(address);
+	}
+
+	return (
+		<button
+			type="button"
+			aria-label={`Copy ${name} address`}
+			onClick={handleClick}
+			onMouseUp={stop}
+			onKeyDown={stop}
+			className={cn(
+				"grid size-6 place-items-center rounded-4 transition-colors hover:bg-control-hover",
+				copied ? "text-market-up" : "text-fg-muted",
+			)}
+		>
+			<CopyStateIcon copied={copied} announcement="Address copied" inheritColor />
+		</button>
 	);
 }
 
