@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
+import { onChartActivation } from "@/lib/chart/activation";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
 import { buildExecutionMarkers, type ExecutionFill } from "@/lib/chart/execution-markers";
 import { type CandleInterval, RESOLUTIONS, resolutionToInterval } from "@/lib/chart/resolution";
@@ -143,10 +144,6 @@ function candleIntervalMs(interval: CandleInterval): number {
 	return Number.parseInt(interval, 10) * (CANDLE_UNIT_MS[interval.slice(-1)] ?? 0);
 }
 
-function crossesBarBoundary(fromMs: number, toMs: number, barMs: number): boolean {
-	return barMs > 0 && Math.floor(fromMs / barMs) !== Math.floor(toMs / barMs);
-}
-
 interface ResyncListener {
 	barMs: number;
 	onResetCacheNeeded: () => void;
@@ -165,7 +162,7 @@ const configuration: DatafeedConfiguration = {
  * keeps only the latest bar per stream, and a websocket reconnect resumes with
  * the current bar only. Both leave a hole in the series, so the feed asks the
  * chart to refetch history (`onBarsReset` must call `chart.resetData()`) when
- * the page returns after a bar boundary or a live bar skips past the last one.
+ * the page becomes active or a live bar skips past the last one.
  */
 export function createDatafeed(
 	getFills: () => readonly ExecutionFill[] = () => [],
@@ -177,7 +174,6 @@ export function createDatafeed(
 	const pendingResets = new Set<string>();
 	const resetBarTimes = new Map<string, number>();
 	let resetScheduled = false;
-	let hiddenAt: number | null = null;
 	let detachVisibility: (() => void) | undefined;
 
 	function scheduleReset(listenerGuid: string) {
@@ -198,24 +194,11 @@ export function createDatafeed(
 		}, 0);
 	}
 
-	function handleVisibilityChange() {
-		if (document.visibilityState === "hidden") {
-			hiddenAt ??= Date.now();
-			return;
-		}
-		if (hiddenAt === null) return;
-		const now = Date.now();
-		for (const [guid, listener] of resyncListeners) {
-			if (crossesBarBoundary(hiddenAt, now, listener.barMs)) scheduleReset(guid);
-		}
-		hiddenAt = null;
-	}
-
 	function attachVisibility() {
-		if (detachVisibility || typeof document === "undefined") return;
-		hiddenAt = document.visibilityState === "hidden" ? Date.now() : null;
-		document.addEventListener("visibilitychange", handleVisibilityChange);
-		detachVisibility = () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+		if (detachVisibility) return;
+		detachVisibility = onChartActivation(() => {
+			for (const guid of resyncListeners.keys()) scheduleReset(guid);
+		});
 	}
 
 	function releaseResyncListener(listenerGuid: string) {

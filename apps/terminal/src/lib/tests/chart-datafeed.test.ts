@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Bar, LibrarySymbolInfo, ResolutionString } from "@/types/charting_library";
+
+afterEach(() => {
+	vi.useRealTimers();
+	vi.restoreAllMocks();
+});
 
 const SYMBOL_INFO = {
 	name: "ETH/USD",
@@ -78,6 +84,7 @@ describe("datafeed subscribeBars – last-bar replay deduplication", () => {
 
 		expect(onTick).toHaveBeenCalledTimes(1);
 		expect(onTick).toHaveBeenCalledWith(LIVE_BAR);
+		datafeed.unsubscribeBars(LISTENER_GUID);
 	});
 
 	it("calls onTick once for the cached bar when the live stream has no replay", async () => {
@@ -93,6 +100,7 @@ describe("datafeed subscribeBars – last-bar replay deduplication", () => {
 
 		expect(onTick).toHaveBeenCalledTimes(1);
 		expect(onTick).toHaveBeenCalledWith(LIVE_BAR);
+		datafeed.unsubscribeBars(LISTENER_GUID);
 	});
 
 	it("calls onTick twice when stream bar differs from cached bar", async () => {
@@ -107,5 +115,32 @@ describe("datafeed subscribeBars – last-bar replay deduplication", () => {
 		datafeed.subscribeBars(SYMBOL_INFO, RESOLUTION, onTick, LISTENER_GUID, vi.fn());
 
 		expect(onTick).toHaveBeenCalledTimes(2);
+		datafeed.unsubscribeBars(LISTENER_GUID);
 	});
+});
+
+it("refreshes TradingView on activation within the same candle and detaches on unsubscribe", async () => {
+	vi.useFakeTimers();
+	vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+	const { getCandleStore } = await import("@/lib/chart/store");
+	vi.mocked(getCandleStore).mockReturnValue(makeStore() as unknown as ReturnType<typeof getCandleStore>);
+	const { createDatafeed } = await import("@/components/trade/chart/datafeed");
+	const resetWidget = vi.fn(),
+		resetCache = vi.fn();
+	const feed = createDatafeed(() => [], resetWidget);
+	feed.subscribeBars(SYMBOL_INFO, RESOLUTION, vi.fn(), LISTENER_GUID, resetCache);
+	window.dispatchEvent(new Event("focus"));
+	document.dispatchEvent(new Event("visibilitychange"));
+	await vi.advanceTimersByTimeAsync(1);
+	expect(resetCache).toHaveBeenCalledTimes(1);
+	expect(resetWidget).toHaveBeenCalledTimes(1);
+	await vi.advanceTimersByTimeAsync(1000);
+	window.dispatchEvent(new Event("focus"));
+	await vi.advanceTimersByTimeAsync(1);
+	expect(resetWidget).toHaveBeenCalledTimes(2);
+	feed.unsubscribeBars(LISTENER_GUID);
+	await vi.advanceTimersByTimeAsync(1000);
+	window.dispatchEvent(new Event("focus"));
+	await vi.advanceTimersByTimeAsync(1);
+	expect(resetWidget).toHaveBeenCalledTimes(2);
 });

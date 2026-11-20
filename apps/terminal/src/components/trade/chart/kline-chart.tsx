@@ -4,6 +4,7 @@ import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type ChartTypeConfig, DEFAULT_CHART_TYPE, INITIAL_CANDLE_COUNT, VOLUME_INDICATOR_NAME } from "@/config/chart";
 import { MS_PER_DAY } from "@/config/time";
+import { onChartActivation } from "@/lib/chart/activation";
 import { candleEventToKLineData, candlesToKLineData } from "@/lib/chart/candle";
 import { formatShortDate, formatTime, formatTooltipDate } from "@/lib/chart/format";
 import { buildKlineStyles } from "@/lib/chart/kline-styles";
@@ -137,23 +138,24 @@ function createLiveCandleFeed(
 			return;
 		}
 		if (hiddenAt === null) return;
-		const crossedBar = Math.floor(hiddenAt / interval.barMs) !== Math.floor(Date.now() / interval.barMs);
 		hiddenAt = null;
 		chart.resize();
 		if (isBackfilling) return;
-		const last = chart.getDataList().at(-1);
-		if (crossedBar && last) {
-			backfill(last.timestamp);
-			return;
-		}
 		flush();
 	}
 
 	document.addEventListener("visibilitychange", handleVisibilityChange);
+	const stopActivation = onChartActivation(() => {
+		if (!isActive() || isBackfilling) return;
+		chart.resize();
+		const last = chart.getDataList().at(-1);
+		if (last) backfill(last.timestamp);
+	});
 
 	return {
 		push,
 		dispose: () => {
+			stopActivation();
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			buffer = [];
 		},
